@@ -575,6 +575,9 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
   color:var(--zhu); border-left:3px solid var(--zhu); padding-left:8px; margin-bottom:8px;
 }
 .card-material .oral { margin-bottom:14px; }
+.sum-stem { margin:0 0 10px; font-family:var(--font-sans); font-size:14.5px; line-height:1.75; color:var(--ink); }
+.sum-stem .stem-q { font-weight:600; }
+.sum-stem .stem-req { display:block; margin-top:3px; font-size:12.5px; font-weight:400; color:var(--dai); }
 
 /* 格子作答区：桌面整数格定宽（20 格/行），保证字数刻度准确；窄屏流式 */
 .grid-zone { padding:14px 0 2px; margin-top:14px; border-top:1px solid var(--line); }
@@ -1463,6 +1466,7 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
             <div class="sum-panel" data-p="0">
               <div class="card-material">
                 <span class="material-tag">材 料</span>
+                <div class="sum-stem" id="sumStem"></div>
                 <div class="meta-context" id="summaryContext"></div>
                 <blockquote class="oral summary-material" id="summaryMaterial"></blockquote>
                 <div class="sum-source" id="summarySource"></div>
@@ -4882,6 +4886,10 @@ function renderSummaryQuestion(q) {
   }
   currentQ = q;
   const aiQuestion = q.sourceType === 'AI生成训练材料（非离线来源原文）';
+  // 仿真题干：概括角度随 q.type 变化，学习者据此明确任务目标
+  const STEM_ACTION = { '做法': '概括资料中反映的主要做法', '问题': '概括资料中反映的主要问题', '成效': '概括资料中反映的主要成效', '变化': '概括资料中反映的主要变化', '经验': '概括资料中反映的主要经验' };
+  const stemAction = STEM_ACTION[q.type] || `概括资料的主要内容（${q.type}）`;
+  $('#sumStem').innerHTML = `<span class="stem-q">根据给定资料，${esc(stemAction)}。</span><span class="stem-req">要求：全面、准确、有条理，不超过 150 字。</span>`;
   $('#summaryType').textContent = `概括${q.type} · ${aiQuestion ? 'AI出题' : '离线题库'}`;
   $('#summaryLevel').textContent = q.level;
   $('#summaryContext').textContent = q.context;

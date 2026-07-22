@@ -48,6 +48,15 @@ Three-color discipline enforced via CSS vars in `:root` (light) and `[data-theme
 - **IME**: grid-paper textareas add `.ime-active` on `compositionstart` to suspend per-char grid alignment during pinyin composition, snap back on `compositionend`/`focusout`. Preserve this if touching the grid-paper CSS.
 - **Backups**: before a non-trivial edit, copy to `_backups/规范表达练习_pre-vN-<desc>.html`. Design rationale for past changes is in git history (`.cola-task.md` no longer exists; do not reference it).
 
+## Working style
+
+Behavioral guardrails for any agent editing this repo (bias to caution over speed; use judgment on trivial tasks):
+
+- **Think before coding**: state assumptions; if a request is ambiguous or has multiple readings, ask or present them — don't pick silently. If a simpler approach exists, say so.
+- **Simplicity first**: minimum code that solves the ask — no unrequested features, abstractions, or "configurability"; no error handling for impossible cases. If it could be 50 lines instead of 200, rewrite.
+- **Surgical changes**: touch only what the request needs; don't "improve" adjacent code/comments/formatting or refactor what isn't broken; match existing style. Every changed line should trace to the user's request. Remove only orphans your own change created; mention — don't delete — pre-existing dead code.
+- **Goal-driven execution**: turn "done" into a verifiable check and loop until it passes. Here that means `node _dev/check.js` and `node _dev/_validate.js` exit 0, plus the relevant `回归验收清单.md` rows for non-trivial edits.
+
 ## Gotchas
 
 - **`file://` vs `http://`**: IndexedDB and FSA behave differently (and historically hung boot under `file://` in headless). `openHandleDB()` has a 2.5s timeout that degrades to `null` (skips file-handle restore, localStorage still works); `boot()` has an 8s force-hide. Do not remove these safety nets — they prevent the user from being stuck on "铺纸研墨".

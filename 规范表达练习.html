@@ -725,6 +725,36 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
 .dim-chips { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
 .dim-chip { font-size:12px; padding:3px 10px; border-radius:4px; background:var(--ink-04,rgba(0,0,0,.04)); color:var(--ink-soft); border:1px solid var(--line); }
 .dim-chip b { font-family:var(--font-latin); font-style:italic; color:var(--zhu); margin-left:4px; }
+/* 评分档位 · 维度卡 · 评分标准 */
+.band-tag { display:inline-block; margin-top:8px; font-size:12px; font-family:var(--font-sans); letter-spacing:.1em; color:var(--zhu); border:1px solid var(--zhu-line); border-radius:2px; padding:2px 9px; }
+.dim-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; margin:12px 0; }
+.dim-card { border:1px solid var(--line); border-radius:var(--radius); padding:9px 12px; background:var(--paper-2); }
+.dim-card .dc-head { display:flex; justify-content:space-between; align-items:baseline; }
+.dim-card .dc-name { font-size:13px; color:var(--ink-soft); letter-spacing:.08em; }
+.dim-card .dc-score { font-family:var(--font-latin); font-style:italic; font-size:18px; font-weight:600; color:var(--zhu); }
+.dim-card .dc-def { font-size:11.5px; color:var(--muted); margin-top:3px; line-height:1.55; }
+.dim-card .dc-comment { font-size:12.5px; color:var(--ink-soft); margin-top:6px; padding-top:6px; border-top:1px dashed var(--line); line-height:1.65; }
+.rubric { margin:6px 0 4px; border-top:1px dashed var(--line); padding-top:8px; }
+.rubric summary { font-size:12.5px; color:var(--muted); cursor:pointer; user-select:none; list-style:none; }
+.rubric summary::-webkit-details-marker { display:none; }
+.rubric summary::before { content:'▸ '; }
+.rubric[open] summary::before { content:'▾ '; }
+.rubric summary:hover { color:var(--ink-soft); }
+.rubric-body { margin-top:8px; display:grid; gap:5px; font-size:12.5px; color:var(--ink-soft); }
+.rubric-body .rb-row { display:flex; gap:10px; line-height:1.6; }
+.rubric-body .rb-k { flex:none; min-width:7.5em; color:var(--muted); font-size:12px; font-family:var(--font-sans); letter-spacing:.04em; }
+/* 画像维度分色与强弱标记 */
+.dim-fill.band-weak { background:var(--zhu); }
+.dim-fill.band-mid { background:var(--gold); }
+.dim-fill.band-strong { background:var(--dai); }
+.dim-tag { font-size:10.5px; font-family:var(--font-sans); letter-spacing:.1em; padding:0 6px; border-radius:2px; margin-left:6px; }
+.dim-tag.weak { color:var(--zhu); border:1px solid var(--zhu-line); }
+.dim-tag.strong { color:var(--dai); border:1px solid var(--dai-line); }
+.dim-comment { display:block; font-size:11.5px; color:var(--muted); letter-spacing:0; margin-top:2px; line-height:1.5; }
+.profile-trend { font-size:12.5px; color:var(--ink-soft); margin-top:6px; font-family:var(--font-sans); }
+.profile-trend .up { color:var(--dai); font-weight:600; }
+.profile-trend .down { color:var(--zhu); font-weight:600; }
+.level-explain { font-size:12.5px; color:var(--muted); margin-top:3px; line-height:1.6; font-family:var(--font-sans); }
 .next-focus-tip { font-size:13px; padding:10px 14px; background:var(--dai-soft,#e8f5ee); border-radius:8px; color:var(--dai-deep); margin:12px 0; line-height:1.7; }
 
 /* 自评五星（掌握度） */
@@ -1088,8 +1118,14 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
 .bl-text { font-size:17px; font-weight:900; letter-spacing:.34em; text-indent:.34em; animation:blFade .6s ease .25s both; }
 .bl-sub { font-size:12px; color:var(--muted); font-family:var(--font-sans); letter-spacing:.22em; animation:blFade .6s ease .4s both; }
 @keyframes blFade { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+/* 不确定进度条：持续扫动表明在加载，避免静态画面被误以为卡死 */
+.bl-bar { width:120px; height:2px; background:var(--line); border-radius:1px; overflow:hidden; animation:blFade .6s ease .5s both; }
+.bl-bar span { display:block; width:40%; height:100%; background:var(--zhu); animation:blSweep 1.2s ease-in-out infinite; }
+@keyframes blSweep { from { transform:translateX(-110%); } to { transform:translateX(360%); } }
+.bl-status { font-size:11px; color:var(--muted); font-family:var(--font-sans); letter-spacing:.14em; min-height:1em; animation:blFade .6s ease .6s both; }
 #bootLoader.bl-error .bl-mark { animation:none; background:var(--zhu); }
 #bootLoader.bl-error .bl-sub { color:var(--zhu); }
+#bootLoader.bl-error .bl-bar, #bootLoader.bl-error .bl-status { display:none; }
 
 /* GSAP 接管 drawer 位移时，关掉 CSS 过渡避免打架；verdict 改由子元素错峰入场 */
 .gsap-motion #drawer { transition:visibility var(--t-med); }
@@ -1368,6 +1404,8 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
     <div class="bl-mark" aria-hidden="true"></div>
     <div class="bl-text">铺纸研墨</div>
     <div class="bl-sub">展纸 · 候笔</div>
+    <div class="bl-bar" aria-hidden="true"><span></span></div>
+    <div class="bl-status" id="blStatus">读取练习数据…</div>
   </div>
 </div>
 <div id="app">
@@ -1920,6 +1958,10 @@ function openHandleDB() {
     req.onerror = () => { if (!settled) { settled = true; clearTimeout(timer); reject(req.error); } };
   });
 }
+// FSA 读取在个别环境下可能永不返回：超时降级，抢在 8s boot 兜底之前让出
+function withTimeout(p, ms, label) {
+  return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error(label)), ms))]);
+}
 async function saveFileHandle(handle) {
   try {
     const db = await openHandleDB(); if (!db) return;
@@ -2083,13 +2125,14 @@ async function initData() {
   renderWrongBookBadge();
   dataFileHandle = await loadFileHandle();
   if (dataFileHandle) {
+    bootStatus('连接数据文件…');
     try {
       // 只查询不请求：请求权限需要用户手势，留待用户点击顶栏文件状态时再授权
       const granted = !dataFileHandle.queryPermission
-        || await dataFileHandle.queryPermission({ mode: 'readwrite' }) === 'granted';
+        || await withTimeout(dataFileHandle.queryPermission({ mode: 'readwrite' }), 6000, '数据文件权限查询超时') === 'granted';
       if (granted) {
-        const file = await dataFileHandle.getFile();
-        const parsed = JSON.parse(await file.text());
+        const file = await withTimeout(dataFileHandle.getFile(), 6000, '数据文件读取超时');
+        const parsed = JSON.parse(await withTimeout(file.text(), 6000, '数据文件读取超时'));
         // 防旧文件覆盖新数据
         if ((Number(parsed.updatedAt) || 0) >= (Number(D.updatedAt) || 0)
             || await confirmDialog({ title: '数据文件较旧', message: '数据文件的内容早于浏览器本地记录，仍要载入吗？', confirmText: '仍要载入' })) {
@@ -2102,6 +2145,7 @@ async function initData() {
     } catch(e) {
       console.warn('恢复数据文件失败', e);
       if (e instanceof SyntaxError) showToast('数据文件内容不是有效的 JSON，已使用浏览器本地记录');
+      else if (/超时$/.test(e && e.message || '')) showToast(e.message + '，已使用浏览器本地记录');
       fileAuthorized = false;
       refreshFileStatus();
     }
@@ -2110,10 +2154,27 @@ async function initData() {
   }
   if (D.settings.theme) applyTheme();
   migrateV1();
+  slimHistoryStorage();
   migrateApiSettingsFromLegacy(); // 老版本把 apiKey 存在 D.settings：一次性迁到独立存储
   updateModeStatus();
 }
 
+// 历史记录瘦身（幂等，每次启动跑）：裁剪 AI 批改详情的冗余大字段、清理旧版占位 summaryFeedback
+function slimHistoryStorage() {
+  let changed = false;
+  (D.history || []).forEach(h => {
+    if (!h || typeof h !== 'object') return;
+    if (h.aiScore && typeof h.aiScore === 'object') {
+      const before = JSON.stringify(h.aiScore);
+      const slim = slimAiResult(h.aiScore);
+      if (JSON.stringify(slim) !== before) { h.aiScore = slim; changed = true; }
+    }
+    if (h.trainingType === 'summary' && Array.isArray(h.summaryFeedback) && h.summaryFeedback.length && h.summaryFeedback.every(f => f && f.title === '')) {
+      h.summaryFeedback = []; changed = true;
+    }
+  });
+  if (changed) markDirty();
+}
 function migrateV1() {
   const old = localStorage.getItem('formal_expression_practice_data');
   if (!old || D.history.length > 0) return;
@@ -4834,6 +4895,16 @@ function updateWrongBook(qId, isWrong, reasons) {
   flushPersist();
   renderWrongBookBadge();
 }
+// 「重新作答」还原本次提交对错题本的改动（快照在 submitSummary 顶部）
+let _pendingWrongBook = null;
+function restorePendingWrongBook() {
+  if (!_pendingWrongBook) return;
+  if (!D.wrongBook) D.wrongBook = {};
+  if (_pendingWrongBook.prev) D.wrongBook[_pendingWrongBook.qId] = _pendingWrongBook.prev;
+  else delete D.wrongBook[_pendingWrongBook.qId];
+  _pendingWrongBook = null;
+  renderWrongBookBadge();
+}
 function renderWrongBookBadge() {
   const el = $('#wrongBookBadge');
   if (!el) return;
@@ -5080,17 +5151,17 @@ ${pointsDesc}
 3. 每个用户单元匹配到一个或多个采分点，标记 status：covered(已覆盖)/partial(部分覆盖，如停留在事实层)/missing(漏点)/extra(多余)/uncertain(无法判断是否等价，不直接扣分，标 uncertain 让用户对照)；
 4. problemType 枚举：none/漏点/事实不准/归类不当/概括过窄/概括过宽/口语化/重复/逻辑不清；
 5. 对每个单元给出原文片段、对应采分点、判断、原因、建议改法、参考表达；comment 必须有依据（对应材料哪个事实或哪个采分点），禁止"表述不够规范""概括不到位"这类无依据评语；suggestion 给出可直接替换的写法；
-6. 最后给 4 个维度分数（各 0-10）：要点覆盖、概括准确、表达规范、结构完整；评分锚点：9-10=接近参考答案，7-8=小问题，5-6=明显漏点或概括偏差，≤4=大半未达标；
+6. 最后给 4 个维度分数：信息要点（要点覆盖全不全、事实准不准）、概括提炼（概括是否准确，不过宽过窄、不停留在事实层）、表达规范（有无口语化）、逻辑结构（答案结构是否完整清晰）；各 0-10，每个都要给 score 和一句话 comment（说清这个分数扣在哪）；评分锚点：9-10=接近参考答案，7-8=小问题，5-6=明显漏点或概括偏差，≤4=大半未达标；
 7. score 为综合分（0-10），是逐句批改后的摘要，不是字符串匹配；
 8. overall 必须点名本答案最影响得分的一两个问题，禁止空泛表扬。
 
 【返回严格 JSON】
-{"overall":"总体评价","units":[{"userText":"用户答案原文片段","matchedPoint":"对应采分点","status":"covered|partial|missing|extra|uncertain","problemType":"none|漏点|事实不准|归类不当|概括过窄|概括过宽|口语化|重复|逻辑不清","comment":"原因","suggestion":"建议改法","referenceText":"参考表达"}],"dimensions":{"要点覆盖":0,"概括准确":0,"表达规范":0,"结构完整":0},"score":0,"nextFocus":"下一步重点"}`;
+{"overall":"总体评价","units":[{"userText":"用户答案原文片段","matchedPoint":"对应采分点","status":"covered|partial|missing|extra|uncertain","problemType":"none|漏点|事实不准|归类不当|概括过窄|概括过宽|口语化|重复|逻辑不清","comment":"原因","suggestion":"建议改法","referenceText":"参考表达"}],"dimensions":{"信息要点":{"score":0,"comment":"评语"},"概括提炼":{"score":0,"comment":"评语"},"表达规范":{"score":0,"comment":"评语"},"逻辑结构":{"score":0,"comment":"评语"}},"score":0,"nextFocus":"下一步重点"}`;
   const sysMsg = {role:'system',content:AI_SYSTEM_BASE+' 所有 string 字段值必须用简体中文，不要混入英文或拼音术语。status 只能是 covered|partial|missing|extra|uncertain；problemType 只能是上方枚举值。nextFocus 必须从本题学习者的实际错误出发归纳成可迁移的通用概括技巧，先点明本题错在哪、再给通用做法；禁止脱离本题错误的空泛建议。'};
   const resp = await callAI([sysMsg, {role:'user',content:prompt}]);
   const result = parseJSON(resp);
   showSummaryOnlineCompare(q, selected, names, answer, result);
-  const rec = {id:Date.now()+Math.random(), date:new Date().toISOString(), mode:'online', trainingType:'summary', question:q, userAnswer:answer, summaryNames:names, selectedSentences:selected, score:(Number(result.score)||null), aiScore:result, selfRating:null, summaryFeedback:(result.units||[]).map(()=>({title:'',ok:false})), summaryStats:null};
+  const rec = {id:Date.now()+Math.random(), date:new Date().toISOString(), mode:'online', trainingType:'summary', question:q, userAnswer:answer, summaryNames:names, selectedSentences:selected, score:(Number(result.score)||null), aiScore:slimAiResult(result), selfRating:null, summaryFeedback:[], summaryStats:null};
   pushHistory(rec); pendingHistoryId = rec.id; flushPersist(); renderSessionStats();
 
   // ── 错题本更新（AI 路径）──
@@ -5122,12 +5193,14 @@ function showSummaryOnlineCompare(q, selected, names, answer, result) {
     const cls = statusClass[u.status] || '';
     return `<div class="fb-detail ${cls}"><span class="fb-tag ${cls}">${st}</span>「${esc(u.userText||'')}」-> ${esc(u.matchedPoint||'')}${u.problemType&&u.problemType!=='none'?` · ${esc(u.problemType)}`:''}<br><span style="color:var(--ink-soft);font-size:.85em">${esc(u.comment||'')}</span>${u.suggestion?`<br><span style="color:var(--dai);font-size:.85em">建议：${esc(u.suggestion)}</span>`:''}${u.referenceText?`<br><span style="color:var(--muted);font-size:.85em">参考：${esc(u.referenceText)}</span>`:''}</div>`;
   }).join('');
-  const dimsHtml = Object.entries(result.dimensions||{}).map(([k,v]) => {
-    const sc = Number(v.score)||0;
-    return `<div class="dim-item"><span class="dim-name">${esc(k)}</span><span><span class="dim-score">${sc}</span><span class="dim-bar"><span class="dim-fill" data-w="${sc*10}"></span></span></span></div>`;
+  // 维度卡：分数 + AI 评语 + 维度含义（修裸数字维度一直显示 0 的问题）
+  const nd = normalizeDims(result.dimensions);
+  const dimsHtml = PROFILE_DIMS.filter(k => nd[k]).map(k => {
+    const v = nd[k];
+    return `<div class="dim-card"><div class="dc-head"><span class="dc-name">${k}</span><span class="dc-score">${v.score}</span></div><div class="dc-def">${DIM_DEFS[k]}</div>${v.comment ? `<div class="dc-comment">${esc(v.comment)}</div>` : ''}</div>`;
   }).join('');
   const scoreVal = Number(result.score)||0;
-  $('#compareMode').innerHTML = `<div class="verdict"><div class="verdict-head"><div class="verdict-eyebrow">AI 批改 · 逐语义单元</div><div class="score-head"><div class="score-circle"><svg class="score-ring" viewBox="0 0 92 70" aria-hidden="true"><path d="M10 40 C5 22 28 7 48 8 C72 9 89 24 85 41 C81 58 57 66 39 63 C19 60 3 56 10 40 Z"/></svg><span class="score-num"><span class="score-value" data-score="${scoreVal}">0</span><span class="score-max">/ 10</span></span></div><div class="score-copy"><div class="verdict-title">逐句批改摘要</div><div class="verdict-lede">AI 批改 · 模型：${esc(modelName)}。逐语义单元匹配采分点，标 uncertain 的请自行对照。</div></div></div></div><div class="layer-list"><div class="layer-item"><div class="layer-title">逐句反馈</div><div class="layer-copy">${unitsHtml || '<div class="fb-detail">未返回逐句反馈</div>'}</div></div><div class="layer-item"><div class="layer-title">维度评分</div><div class="layer-copy">${dimsHtml || '-'}</div></div></div><div class="verdict-grid"><figure class="verdict-col"><figcaption>你的答案<span class="fig-en">YOURS</span></figcaption><div class="verdict-text user grid-paper">${esc(answer)}</div></figure><figure class="verdict-col"><figcaption>参考答案<span class="fig-en">REFERENCE</span></figcaption><div class="verdict-text ref">${esc(q.ref)}</div></figure></div>${result.overall?`<div class="fb-detail fb-ok" style="margin-top:8px">总体评价：${esc(result.overall)}</div>`:''}${result.nextFocus?`<div class="fb-detail" style="margin-top:6px">下一步重点：${esc(result.nextFocus)}</div>`:''}<div class="action-row"><button class="btn btn-text" id="btnSummaryRetry" type="button">重新作答</button><button class="btn btn-ink" id="btnSummaryNext" type="button">下一题 -></button></div></div>`;
+  $('#compareMode').innerHTML = `<div class="verdict"><div class="verdict-head"><div class="verdict-eyebrow">AI 批改 · 逐语义单元</div><div class="score-head"><div class="score-circle"><svg class="score-ring" viewBox="0 0 92 70" aria-hidden="true"><path d="M10 40 C5 22 28 7 48 8 C72 9 89 24 85 41 C81 58 57 66 39 63 C19 60 3 56 10 40 Z"/></svg><span class="score-num"><span class="score-value" data-score="${scoreVal}">0</span><span class="score-max">/ 10</span></span></div><div class="score-copy"><div class="verdict-title">逐句批改摘要</div><div class="verdict-lede">AI 批改 · 模型：${esc(modelName)}。逐语义单元匹配采分点，标 uncertain 的请自行对照。</div><div class="band-tag">${scoreBand(scoreVal).label}档 · ${scoreBand(scoreVal).desc}</div></div></div></div><div class="layer-list"><div class="layer-item"><div class="layer-title">逐句反馈</div><div class="layer-copy">${unitsHtml || '<div class="fb-detail">未返回逐句反馈</div>'}</div></div><div class="layer-item"><div class="layer-title">维度评分</div><div class="layer-copy"><div class="dim-cards" style="margin:4px 0">${dimsHtml || '-'}</div>${rubricHtml()}</div></div></div><div class="verdict-grid"><figure class="verdict-col"><figcaption>你的答案<span class="fig-en">YOURS</span></figcaption><div class="verdict-text user grid-paper">${esc(answer)}</div></figure><figure class="verdict-col"><figcaption>参考答案<span class="fig-en">REFERENCE</span></figcaption><div class="verdict-text ref">${esc(q.ref)}</div></figure></div>${result.overall?`<div class="fb-detail fb-ok" style="margin-top:8px">总体评价：${esc(result.overall)}</div>`:''}${result.nextFocus?`<div class="fb-detail" style="margin-top:6px">下一步重点：${esc(result.nextFocus)}</div>`:''}<div class="action-row"><button class="btn btn-text" id="btnSummaryRetry" type="button">重新作答</button><button class="btn btn-ink" id="btnSummaryNext" type="button">下一题 -></button></div></div>`;
   staggerMarks($('#compareMode'));
   const scoreEl = $('#compareMode .score-value');
   if (scoreEl) animateScore(scoreEl, scoreEl.dataset.score);
@@ -5143,6 +5216,9 @@ async function submitSummary(forceOffline) {
   if (!selected.length) return showToast('先圈出支撑答案的事实');
   if (!groups.length || !groups.some(g => g.name.trim())) return showToast('请至少为一个要点命名');
   if (!answer) return showToast('请组织完整答案');
+
+  // 快照本题错题状态：「重新作答」撤回答案时连同错题本一起还原
+  _pendingWrongBook = { qId: q.id, prev: (D.wrongBook && D.wrongBook[q.id]) ? { ...D.wrongBook[q.id] } : null };
 
   // AI mode
   let degraded = false;
@@ -5630,6 +5706,7 @@ function showOfflineCompare(q, userAnswer) {
 // 撤回「已提交」回到作答，让用户重新作答当前题。
 function retryPracticeAnswer(prevAnswer) {
   if (pendingHistoryId != null) {
+    rollbackProfileResult(pendingHistoryId);
     const idx = D.history.findIndex(h => h.id === pendingHistoryId);
     if (idx !== -1) {
       const rec = D.history[idx];
@@ -5863,7 +5940,7 @@ async function finishLevelTest() {
   const history = testQuestions.map((q,i) => `第${i+1}题: 领域=${q.domain} 难度=${q.level}\n原句: ${q.oral}\n学习者: ${testAnswers[i]}\n参考: ${q.ref}`).join('\n\n');
 
   try {
-    const prompt = `你是规范表达评估专家。根据以下5道测试题和学习者回答综合分析。\n${history}\n\n返回如下 JSON 格式:\n{"overallLevel":"L1或L2或L3","dimensions":{"规范性":{"score":8,"comment":"评语"},"准确性":{"score":7,"comment":"评语"},"流畅性":{"score":6,"comment":"评语"},"信息密度":{"score":5,"comment":"评语"}},"weakDomains":["薄弱领域1"],"oralWordHabits":["高频口语词1"],"suggestedDifficulty":"L2","suggestedFocus":"建议重点"}`;
+    const prompt = `你是规范表达评估专家。根据以下5道测试题和学习者回答综合分析。\n${history}\n\n返回如下 JSON 格式:\n{"overallLevel":"L1或L2或L3","dimensions":{"信息要点":{"score":8,"comment":"评语"},"概括提炼":{"score":7,"comment":"评语"},"表达规范":{"score":6,"comment":"评语"},"逻辑结构":{"score":5,"comment":"评语"}},"weakDomains":["薄弱领域1"],"oralWordHabits":["高频口语词1"],"suggestedDifficulty":"L2","suggestedFocus":"建议重点"}`;
     const resp = await callAI([{role:'system',content:AI_SYSTEM_BASE+' 所有 string 字段值（含 dimensions[*].comment、suggestedFocus、weakDomains、oralWordHabits 等）必须用简体中文，不要混入英文或拼音术语。'},{role:'user',content:prompt}]);
     D.profile = parseJSON(resp);
     D.profile.generatedAt = new Date().toISOString();
@@ -5908,13 +5985,13 @@ async function aiSubmitAnswer(userAnswer) {
 【批改要求】
 1. 先逐条核对考核点、找出具体问题，最后才打分，不要在分析之前定分。
 2. corrections 只挑最影响效果的 1-4 条，按严重程度排序。original 必须逐字摘录学习者答案原文（将用于在原文中高亮定位，不得改写或概括）；reason 说清这个表达在公文语境里具体差在哪、为什么建议的写法更好，禁止只写"更规范""更正式"。
-3. 评分锚点：9-10=可直接当参考答案；7-8=基本规范、仅个别用词或句式瑕疵；5-6=有明显口语残留或信息缺损；≤4=大半未达规范表达。维度含义——规范性：有无口语词、句式是否公文式；准确性：信息是否完整准确、有无曲解原意；流畅性：语句通顺、逻辑衔接自然；信息密度：用最少的字传达最多的有效信息。
+3. 评分锚点：9-10=可直接当参考答案；7-8=基本规范、仅个别用词或句式瑕疵；5-6=有明显口语残留或信息缺损；≤4=大半未达规范表达。四个维度（每个都要给 score 和一句话 comment，comment 说清这个分数主要扣在哪）——信息要点：信息是否完整准确、有无曲解原意；概括提炼：用最少的字传达最多的有效信息；表达规范：有无口语词、句式是否公文式；逻辑结构：语句通顺、逻辑衔接自然。
 4. overallComment 用一两句话点名本答案最主要的问题，禁止"整体不错""表达较为流畅"式开场。
 5. demoRewrite：在学习者答案基础上做最小改动，保留其结构和信息，只把不规范处改成规范表达，让学习者看到"自己这句该怎么写"。
 6. nextFocus：从本题暴露的实际错误出发归纳一条可迁移做法——先点明本题错在哪，再给通用做法（如"本题你把'啥也不管'写成'管理不到位'，漏掉了主体；今后遇到口语化指控，先问'谁该做什么没做'，补出主体再概括"）。
 
 【返回严格 JSON，字段顺序即分析顺序】
-{"corrections":[{"original":"学习者答案逐字片段","suggestion":"建议改法","reason":"具体原因"}],"dimensions":{"规范性":{"score":0,"comment":"评语"},"准确性":{"score":0,"comment":"评语"},"流畅性":{"score":0,"comment":"评语"},"信息密度":{"score":0,"comment":"评语"}},"score":0,"overallComment":"点名最主要问题的一两句话","demoRewrite":"基于学习者答案的最小改动规范版","nextFocus":"从本题错误归纳的可迁移技巧"}`;
+{"corrections":[{"original":"学习者答案逐字片段","suggestion":"建议改法","reason":"具体原因"}],"dimensions":{"信息要点":{"score":0,"comment":"评语"},"概括提炼":{"score":0,"comment":"评语"},"表达规范":{"score":0,"comment":"评语"},"逻辑结构":{"score":0,"comment":"评语"}},"score":0,"overallComment":"点名最主要问题的一两句话","demoRewrite":"基于学习者答案的最小改动规范版","nextFocus":"从本题错误归纳的可迁移技巧"}`;
     const resp = await callAI([{role:'system',content:AI_SYSTEM_BASE+' 所有 string 字段值必须用简体中文，不要混入英文或拼音术语。corrections[*].original 必须是学习者答案中逐字摘录的片段。nextFocus 必须从本题学习者的实际错误出发归纳成可迁移的通用技巧，先点明本题错在哪、再给通用做法；禁止脱离本题错误的空泛建议。'},{role:'user',content:prompt}]);
     const result = parseJSON(resp);
 
@@ -5934,42 +6011,136 @@ async function aiSubmitAnswer(userAnswer) {
   }
 }
 
-// 画像滑动窗口更新：近 20 题各维度均值 + 均分定级，替代单题覆盖（修画像剧烈跳动）
+// ── 综合画像统一维度：概括训练与规范改写的评分都归一到这 4 维，进同一个滑动窗口算综合画像 ──
+const PROFILE_DIMS = ['信息要点', '概括提炼', '表达规范', '逻辑结构'];
+const DIM_DEFS = {
+  '信息要点': '信息完整准确：要点无遗漏、不曲解原意',
+  '概括提炼': '提炼到位：用最少字数传达最多有效信息，不停留在事实层',
+  '表达规范': '无口语词，句式符合公文语体',
+  '逻辑结构': '语句通顺、衔接自然、结构完整清晰'
+};
+// 旧维度名 → 统一维度（兼容旧批改返回与历史画像数据）
+const DIM_ALIAS = {
+  '信息要点': '信息要点', '概括提炼': '概括提炼', '表达规范': '表达规范', '逻辑结构': '逻辑结构',
+  '要点覆盖': '信息要点', '准确性': '信息要点',
+  '概括准确': '概括提炼', '信息密度': '概括提炼',
+  '规范性': '表达规范',
+  '结构完整': '逻辑结构', '流畅性': '逻辑结构'
+};
+// 评分档位：结果页与画像展示的是同一份标准
+const SCORE_BANDS = [
+  { min: 9, range: '9–10', label: '接近参考', desc: '可直接当参考答案' },
+  { min: 7, range: '7–8', label: '基本规范', desc: '仅个别用词或句式瑕疵' },
+  { min: 5, range: '5–6', label: '明显欠缺', desc: '有明显口语残留或信息缺损' },
+  { min: 0, range: '0–4', label: '大半未达', desc: '大半未达规范表达' }
+];
+function scoreBand(s) { const n = Number(s) || 0; return SCORE_BANDS.find(b => n >= b.min) || SCORE_BANDS[SCORE_BANDS.length - 1]; }
+// 维度分数读取：兼容 {score,comment} 对象与旧概括路径的裸数字两种返回
+function dimScoreOf(v) { const n = (typeof v === 'number') ? v : Number(v && v.score); return Number.isFinite(n) ? n : NaN; }
+// 任意一次批改的维度归一到统一四维；映射到同一维度的多来源取均值
+function normalizeDims(dims) {
+  const acc = {};
+  Object.entries(dims || {}).forEach(([k, v]) => {
+    const uk = DIM_ALIAS[k]; if (!uk) return;
+    const sc = dimScoreOf(v); if (!Number.isFinite(sc)) return;
+    const a = acc[uk] = acc[uk] || { sum: 0, n: 0, comment: '' };
+    a.sum += sc; a.n++;
+    if (!a.comment && v && typeof v === 'object' && v.comment) a.comment = v.comment;
+  });
+  const out = {};
+  Object.entries(acc).forEach(([k, a]) => { out[k] = { score: Math.round(a.sum / a.n * 10) / 10, comment: a.comment }; });
+  return out;
+}
+// 历史记录只存回顾所需的最小 AI 结果：分数/四维/总评/批注。
+// 逐句 units 与示范改写占大头且历史页用不到，不入库（新写入与旧数据迁移共用，幂等）。
+function slimAiResult(result) {
+  if (!result || typeof result !== 'object') return result;
+  const slim = { score: Number(result.score) || null, dimensions: normalizeDims(result.dimensions), overall: result.overall || result.overallComment || '' };
+  if (Array.isArray(result.corrections)) slim.corrections = result.corrections;
+  return slim;
+}
+// 评分标准折叠条：档位锚点 + 四维含义
+function rubricHtml() {
+  const bands = SCORE_BANDS.map(b => `<div class="rb-row"><span class="rb-k">${b.range} 分 · ${b.label}</span><span>${b.desc}</span></div>`).join('');
+  const dims = PROFILE_DIMS.map(k => `<div class="rb-row"><span class="rb-k">${k}</span><span>${DIM_DEFS[k]}</span></div>`).join('');
+  return `<details class="rubric"><summary>评分标准</summary><div class="rubric-body">${bands}<div class="rb-row" style="margin-top:4px"><span class="rb-k">四个维度</span><span></span></div>${dims}</div></details>`;
+}
+
+// 画像滑动窗口更新：近 20 题统一四维均值 + 均分定级（综合窗口，两条训练路径同一套维度）
 function updateProfileFromResult(result) {
   if (!D.profile) {
     // 首次 AI 批改自动建立画像，无需先做摸底测试
     D.profile = {
       overallLevel: 'L1',
-      dimensions: result.dimensions || {},
+      dimensions: {},
       weakDomains: [],
       oralWordHabits: [],
       suggestedFocus: result.nextFocus || '',
       generatedAt: new Date().toISOString(),
       profileVersion: 1,
-      recentScores: []
+      recentScores: [],
+      autoCreated: true // 非摸底生成：重新作答回滚抽空后整体移除
     };
     renderPracticeTip();
   }
   if (!Array.isArray(D.profile.recentScores)) D.profile.recentScores = [];
-  D.profile.recentScores.push({ score: Number(result.score) || 0, dims: result.dimensions || {} });
+  // hid 关联本次历史记录，重新作答/撤回时按它回滚
+  D.profile.recentScores.push({ hid: pendingHistoryId != null ? pendingHistoryId : undefined, score: Number(result.score) || 0, dims: normalizeDims(result.dimensions) });
   if (D.profile.recentScores.length > 20) D.profile.recentScores.shift();
-  const recent = D.profile.recentScores;
-  // 各维度近 N 题均值
-  const dimNames = Object.keys(recent[recent.length - 1].dims || {});
+  recomputeProfileWindow();
+  if (result.nextFocus) D.profile.suggestedFocus = result.nextFocus;
+  // 高频口语词按实际统计 top 5 更新，让 AI 出题针对真实习惯（非摸底一次性判断）
+  const top = Object.entries(D.oralWordStats || {}).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([w]) => w);
+  if (top.length >= 3) D.profile.oralWordHabits = top;
+}
+
+// 由滑动窗口重算 dimensions/avgScore/level/weakDomains；窗口为空时不动（保护摸底生成的画像）
+function recomputeProfileWindow() {
+  const recent = D.profile.recentScores || [];
+  if (!recent.length) return;
+  // 统一四维近 N 题均值；各维度保留最近一条 AI 评语，让分数有据可查
   const dims = {};
-  dimNames.forEach(k => {
-    const vals = recent.map(r => Number(r.dims?.[k]?.score)).filter(Number.isFinite);
-    dims[k] = { score: vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length * 10) / 10 : 0, comment: '' };
+  PROFILE_DIMS.forEach(k => {
+    const vals = recent.map(r => dimScoreOf(r.dims?.[k])).filter(Number.isFinite);
+    let comment = '';
+    for (let i = recent.length - 1; i >= 0 && !comment; i--) comment = recent[i].dims?.[k]?.comment || '';
+    dims[k] = { score: vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length * 10) / 10 : 0, comment };
   });
   D.profile.dimensions = dims;
   // 综合水平按近 N 题均分
   const scores = recent.map(r => Number(r.score)).filter(Number.isFinite);
   const avgScore = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+  D.profile.avgScore = Math.round(avgScore * 10) / 10;
   D.profile.overallLevel = avgScore >= 8 ? 'L3' : avgScore >= 5 ? 'L2' : 'L1';
-  if (result.nextFocus) D.profile.suggestedFocus = result.nextFocus;
-  // 高频口语词按实际统计 top 5 更新，让 AI 出题针对真实习惯（非摸底一次性判断）
-  const top = Object.entries(D.oralWordStats || {}).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([w]) => w);
-  if (top.length >= 3) D.profile.oralWordHabits = top;
+  // 薄弱领域随每次批改自动重算：低于 7 分的维度取最弱 2 个（出题与画像同步更新）
+  D.profile.weakDomains = PROFILE_DIMS.filter(k => dims[k].score > 0 && dims[k].score < 7).sort((a, b) => dims[a].score - dims[b].score).slice(0, 2);
+}
+
+// 重新作答/撤回：按历史记录 id 回滚画像窗口条目；自动建立的画像被抽空则整体移除
+function rollbackProfileResult(hid) {
+  if (!D.profile || !Array.isArray(D.profile.recentScores) || hid == null) return;
+  const idx = D.profile.recentScores.map(r => r.hid).lastIndexOf(hid);
+  if (idx === -1) return;
+  D.profile.recentScores.splice(idx, 1);
+  if (!D.profile.recentScores.length && D.profile.autoCreated) {
+    D.profile = null;
+    renderPracticeTip();
+    return;
+  }
+  recomputeProfileWindow();
+}
+
+// 近段 vs 前段均分对比（窗口 ≥8 条才显示，避免早期噪声）
+function profileTrend(recent) {
+  if (!Array.isArray(recent) || recent.length < 8) return '';
+  const lastN = Math.min(10, Math.floor(recent.length / 2));
+  const last = recent.slice(-lastN), prev = recent.slice(0, -lastN).slice(-10);
+  const avgOf = arr => { const v = arr.map(r => Number(r.score)).filter(Number.isFinite); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : NaN; };
+  const a = avgOf(last), b = avgOf(prev);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return '';
+  const d = Math.round((a - b) * 10) / 10;
+  if (Math.abs(d) < 0.1) return `近 ${lastN} 题均分 ${a.toFixed(1)}，与前 ${prev.length} 题持平`;
+  return `近 ${lastN} 题均分 ${a.toFixed(1)}，较前 ${prev.length} 题 ${d > 0 ? '<span class="up">↑' + d + '</span>' : '<span class="down">↓' + Math.abs(d) + '</span>'}`;
 }
 
 function animateScore(el, target) {
@@ -6013,10 +6184,11 @@ function showOnlineCompare(q, userAnswer, result) {
     }).join('');
   }
 
-  // ── 维度紧凑 chips ──
-  const dimsHtml = Object.entries(result.dimensions || {}).map(([k,v]) => {
-    const sc = Number(v.score) || 0;
-    return `<span class="dim-chip">${esc(k)}<b>${sc}</b></span>`;
+  // ── 维度卡：分数 + AI 评语 + 维度含义（评语此前已返回但未展示）──
+  const nd = normalizeDims(result.dimensions);
+  const dimsHtml = PROFILE_DIMS.filter(k => nd[k]).map(k => {
+    const v = nd[k];
+    return `<div class="dim-card"><div class="dc-head"><span class="dc-name">${k}</span><span class="dc-score">${v.score}</span></div><div class="dc-def">${DIM_DEFS[k]}</div>${v.comment ? `<div class="dc-comment">${esc(v.comment)}</div>` : ''}</div>`;
   }).join('');
 
   const scoreVal = Number(result.score) || 0;
@@ -6029,6 +6201,7 @@ function showOnlineCompare(q, userAnswer, result) {
           <div class="score-circle"><svg class="score-ring" viewBox="0 0 92 70" aria-hidden="true"><path d="M10 40 C5 22 28 7 48 8 C72 9 89 24 85 41 C81 58 57 66 39 63 C19 60 3 56 10 40 Z"/></svg><span class="score-num"><span class="score-value" data-score="${scoreVal}">0</span><span class="score-max">/ 10</span></span></div>
           <div class="score-copy">
             <div class="verdict-title" style="font-size:17px">${esc(result.overallComment || '批改完成')}</div>
+            <div class="band-tag">${scoreBand(scoreVal).label}档 · ${scoreBand(scoreVal).desc}</div>
           </div>
         </div>
       </div>
@@ -6037,7 +6210,8 @@ function showOnlineCompare(q, userAnswer, result) {
       ${result.demoRewrite ? `<div style="font-size:12.5px;color:var(--muted);margin:2px 0 6px">示范改写 · 在你的句子上最小改动</div><div class="ref-body show" style="margin:0 0 8px">${esc(result.demoRewrite)}</div>` : ''}
       <div class="ref-collapse" id="refToggle">参考答案 ▾</div>
       <div class="ref-body" id="refBody">${esc(q.ref)}</div>
-      <div class="dim-chips">${dimsHtml}</div>
+      <div class="dim-cards">${dimsHtml}</div>
+      ${rubricHtml()}
       ${result.nextFocus ? `<div class="next-focus-tip">${esc(result.nextFocus)}</div>` : ''}
       <div class="action-row">
         <button class="btn btn-text" id="btnRetryPractice" type="button">重新作答</button>
@@ -6060,7 +6234,7 @@ let _pendingRetryAnswer = ''; // 事件委托用：当前批改对照的原始�
 
 function recordOnlineResult(userAnswer, result) {
   const oralWords = countOralWords(userAnswer); // 用户作答里的口语词（替代仅收画像高频词）
-  const rec = { id: Date.now()+Math.random(), date: new Date().toISOString(), mode: 'online', question: currentQ, userAnswer, score: result.score, aiScore: result, selfRating: null, oralWords };
+  const rec = { id: Date.now()+Math.random(), date: new Date().toISOString(), mode: 'online', question: currentQ, userAnswer, score: result.score, aiScore: slimAiResult(result), selfRating: null, oralWords };
   pushHistory(rec);
   pendingHistoryId = rec.id;
   renderSessionStats();
@@ -6356,24 +6530,43 @@ function computeOfflinePortrait() {
 
 function renderProfile() {
   const box = $('#profileContent');
-  // 1) 摸底生成的 AI 画像优先（维度更全）
+  // 1) AI 综合画像优先（统一四维，两条训练路径的数据同一窗口统计）
   if (D.profile) {
     const p = D.profile;
-    const dimsHtml = Object.entries(p.dimensions||{}).map(([k,v]) => {
-      const sc = Number(v.score) || 0;
-      return `<div class="dim-item"><span class="dim-name">${esc(k)}</span><span><span class="dim-score">${sc}</span><span class="dim-bar"><span class="dim-fill" style="width:${sc*10}%"></span></span></span></div>`;
+    const dims = normalizeDims(p.dimensions); // 兼容旧画像：归一到统一四维
+    PROFILE_DIMS.forEach(k => { if (!dims[k]) dims[k] = { score: 0, comment: '' }; });
+    const scVals = PROFILE_DIMS.map(k => dims[k].score).filter(s => s > 0);
+    const minSc = scVals.length ? Math.min(...scVals) : 0;
+    const maxSc = scVals.length ? Math.max(...scVals) : 0;
+    const dimsHtml = PROFILE_DIMS.map(k => {
+      const sc = dims[k].score;
+      const bandCls = sc >= 8 ? 'band-strong' : sc >= 5 ? 'band-mid' : 'band-weak';
+      const tag = (sc > 0 && sc === minSc && minSc < 7 && minSc !== maxSc) ? '<span class="dim-tag weak">薄弱</span>'
+                : (sc === maxSc && maxSc >= 8 && minSc !== maxSc) ? '<span class="dim-tag strong">优势</span>' : '';
+      return `<div class="dim-item"><span class="dim-name">${k}${tag}<span class="dim-comment">${esc(dims[k].comment || DIM_DEFS[k])}</span></span><span><span class="dim-score">${sc}</span><span class="dim-bar"><span class="dim-fill ${bandCls}" style="width:${sc*10}%"></span></span></span></div>`;
     }).join('');
+    const levelMap = { L1: ['基础', '均分 <5：先抓规范表达基本功'], L2: ['熟练', '均分 5–7.9：向细节与提炼要分'], L3: ['接近参考', '均分 ≥8：保持手感，冲刺满分表达'] };
+    const [lvName, lvDesc] = levelMap[p.overallLevel] || ['?', ''];
+    const avg = Number(p.avgScore);
+    const hasWindow = Array.isArray(p.recentScores) && p.recentScores.length;
+    const nextLv = p.overallLevel === 'L3' ? null : (p.overallLevel === 'L2' ? ['L3', 8] : ['L2', 5]);
+    const gapTxt = (nextLv && Number.isFinite(avg)) ? `，距 ${nextLv[0]} 还差 ${Math.max(0, nextLv[1] - avg).toFixed(1)} 分` : '';
+    const weak = PROFILE_DIMS.filter(k => dims[k].score > 0 && dims[k].score < 7).sort((a, b) => dims[a].score - dims[b].score).slice(0, 2);
+    const trend = profileTrend(p.recentScores);
     box.innerHTML = `
       <div class="profile-grid">
-        <div class="radar-wrap">${renderRadar(p.dimensions)}</div>
+        <div class="radar-wrap">${renderRadar(dims)}</div>
         <div>
-          <div class="profile-level">综合水平 <em>${esc(p.overallLevel||'?')}</em></div>
-          <div class="profile-date">${p.generatedAt ? '测于 ' + new Date(p.generatedAt).toLocaleDateString('zh-CN') : ''}</div>
+          <div class="profile-level">综合水平 <em>${esc(p.overallLevel || '?')} · ${lvName}</em></div>
+          <div class="level-explain">${lvDesc}${hasWindow ? `（近 ${p.recentScores.length} 次批改均分 ${Number.isFinite(avg) ? avg.toFixed(1) : '?'}${gapTxt}）` : ''}</div>
+          ${trend ? `<div class="profile-trend">${trend}</div>` : ''}
+          <div class="profile-date">${p.generatedAt ? '建立于 ' + new Date(p.generatedAt).toLocaleDateString('zh-CN') : ''}</div>
           <div class="profile-lines">
-            <div><span class="k">薄弱领域</span>${esc((p.weakDomains||[]).join('、')||'无')}</div>
-            <div><span class="k">主攻方向</span>${esc(p.suggestedFocus||'—')}</div>
+            <div><span class="k">薄弱领域</span>${esc(weak.join('、') || '无明显薄弱')}</div>
+            <div><span class="k">主攻方向</span>${esc(p.suggestedFocus || '—')}</div>
           </div>
           <div class="dim-grid" style="margin-top:14px">${dimsHtml}</div>
+          ${rubricHtml()}
           <button class="btn btn-line" id="btnRetest" type="button" style="margin-top:6px">重新摸底</button>
         </div>
       </div>
@@ -6421,6 +6614,12 @@ function renderFreqWords() {
     : `<div class="word-cloud">${sortedWords.map(([w,c]) => `<span class="word-chip freq-${c > maxFreq*.7 ? 3 : c > maxFreq*.3 ? 2 : 1}" title="出现 ${c} 次">${esc(w)}</span>`).join('')}</div>`;
 }
 
+// 概括 AI 记录的历史回顾：四维分 + 总评（逐句明细入库时已裁剪，此处无据可查）
+function histAiSummaryHtml(h) {
+  const dims = h.aiScore.dimensions || {};
+  const chips = PROFILE_DIMS.filter(k => dims[k]).map(k => `<span class="chip" style="margin-right:4px">${k} ${dims[k].score}</span>`).join('');
+  return `${chips ? `<div class="scan-suggestion">${chips}</div>` : ''}${h.aiScore.overall ? `<div class="scan-suggestion">${esc(h.aiScore.overall)}</div>` : ''}`;
+}
 function renderHistory() {
   const list = $('#historyList');
   let items = [...D.history].reverse();
@@ -6473,7 +6672,7 @@ function renderHistory() {
         ${h.trainingType === 'summary' && h.summaryNames ? `<span class="k">上位概括词</span><div class="yours">${esc(h.summaryNames)}</div>` : ''}
         <span class="k">${h.trainingType === 'summary' ? '你的答案' : '你的改写'}</span><div class="yours">${h.trainingType === 'summary' ? esc(h.userAnswer||'') : highlightOralWords(h.userAnswer||'')}</div>
         <span class="k">参考答案</span><div class="ref">${esc(h.question?.ref||'')}</div>
-        ${h.trainingType === 'summary' ? (h.summaryFeedback || []).map(f => `<div class="scan-suggestion"><strong>${esc(f.title)}</strong> · ${f.copy ? esc(f.copy) : (f.ok ? '达标' : '待加强')}</div>`).join('') : (kp.length ? `<span class="k">改写要点</span>` + kp.map(k => `<div class="scan-suggestion">${esc(typeof k === 'string' ? k : '')}</div>`).join('') : '')}
+        ${h.trainingType === 'summary' ? (h.aiScore ? histAiSummaryHtml(h) : (h.summaryFeedback || []).map(f => `<div class="scan-suggestion"><strong>${esc(f.title)}</strong> · ${f.copy ? esc(f.copy) : (f.ok ? '达标' : '待加强')}</div>`).join('')) : (kp.length ? `<span class="k">改写要点</span>` + kp.map(k => `<div class="scan-suggestion">${esc(typeof k === 'string' ? k : '')}</div>`).join('') : '')}
       </div>
     </li>`;
   }).join('');
@@ -7233,12 +7432,16 @@ function initApp() {
       case 'btnRetryPractice': retryPracticeAnswer(_pendingRetryAnswer); break;
       case 'btnNextPractice': showPracticeQuestion(); $('#desk').scrollIntoView({behavior:'smooth'}); break;
       case 'btnSummaryRetry': {
-        if (pendingHistoryId != null) { D.history = D.history.filter(h => h.id !== pendingHistoryId); pendingHistoryId = null; markDirty(); }
+        if (pendingHistoryId != null) {
+          rollbackProfileResult(pendingHistoryId);
+          restorePendingWrongBook();
+          D.history = D.history.filter(h => h.id !== pendingHistoryId); pendingHistoryId = null; markDirty();
+        }
         $('#compareMode').classList.add('hidden');
         $('#summaryMode').classList.remove('hidden');
         break;
       }
-      case 'btnSummaryNext': pendingHistoryId = null; showSummaryQuestion(); $('#desk').scrollIntoView({behavior:'smooth'}); break;
+      case 'btnSummaryNext': pendingHistoryId = null; _pendingWrongBook = null; showSummaryQuestion(); $('#desk').scrollIntoView({behavior:'smooth'}); break;
     }
   });
 
@@ -7346,6 +7549,10 @@ function initApp() {
 }
 
 // Boot
+function bootStatus(t) {
+  const el = document.getElementById('blStatus');
+  if (el) el.textContent = t;
+}
 function hideBootLoader() {
   const bl = $('#bootLoader');
   if (!bl) return;
@@ -7369,8 +7576,11 @@ setTimeout(() => {
 }, 8000);
 
 (async function boot() {
+  const slowTimer = setTimeout(() => bootStatus('数据较多，仍在加载，请稍候…'), 6000);
   try {
+    bootStatus('读取练习数据…');
     await initData();
+    bootStatus('研墨备题…');
     renderDomainSelect();
     initApp();
     setTrainingMode(D.settings.trainingMode, false);
@@ -7388,6 +7598,8 @@ setTimeout(() => {
     bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:100;background:#b03a28;color:#f8f1e0;padding:10px 16px;text-align:center;font-size:13px;letter-spacing:.1em;';
     bar.textContent = '铺纸未成，请刷新重试';
     document.body.prepend(bar);
+  } finally {
+    clearTimeout(slowTimer);
   }
 })();
 

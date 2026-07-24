@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>规范表达概括训练 · 新流程样板</title>
+<title>概括训练 · 新流程样板</title>
 <style>
 :root{
   --paper:#f4efe4; --card:#fbf8f0; --ink:#2b2620; --ink-soft:#6b6154; --muted:#9a8f7d;
@@ -245,7 +245,7 @@ textarea:focus{outline:none;border-color:var(--zhu)}
 <div class="wrap">
   <div class="head">
     <div>
-      <h1>规范表达概括训练</h1>
+      <h1>概括训练</h1>
       <div class="sub">真实材料 · 一步一屏 · 搭建链教学</div>
     </div>
     <span class="badge">新流程样板</span>
@@ -636,7 +636,7 @@ document.addEventListener('click', e=>{
 // ── AI 个性化点评 ──
 function aiPrompt(userAns){
   const pts=SAMPLE.points.map((p,i)=>(i+1)+'. '+p.name).join('\n');
-  return `你是规范表达阅卷老师，请对考生的归纳概括答案做个性化点评。
+  return `你是规范表达教练，请对学习者的归纳概括答案做个性化点评。
 【材料】
 ${SAMPLE.material}
 【参考答案要点】

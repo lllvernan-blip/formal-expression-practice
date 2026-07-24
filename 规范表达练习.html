@@ -5218,7 +5218,7 @@ async function aiAssessSummary(q, selected, names, answer) {
 
   const pointsDesc = q.points.map((p,i) => `采分点${i+1}「${p.name}」：事实 ${(q.slices||[]).filter(s=>s.valid&&s.point===i).map(s=>s.text).join('；')}`).join('\n');
   const selectedFacts = selected.map(i => (q.slices[i]||{}).text||'').join('；');
-  const prompt = `你是规范表达概括训练批改专家。按"逐语义单元"批改以下概括练习，不接受笼统总评代替逐句批改。
+  const prompt = `你是规范表达训练批改专家。按"逐语义单元"批改以下概括练习，不接受笼统总评代替逐句批改。
 
 【题目】
 题型：${q.type||'问题'}　领域：${q.domain||'通用'}　场景：${q.context||''}
@@ -6061,7 +6061,7 @@ async function aiSubmitAnswer(userAnswer) {
 
     const profileCtx = D.profile ? `\n学习者画像：水平${D.profile.overallLevel}，弱项${(D.profile.weakDomains||[]).join('、')}（仅供调整建议侧重点，不影响评分）。` : '';
     const kpCtx = (currentQ.keyPoints||[]).length ? `\n本题考核点（逐条核对学习者是否掌握）：\n${currentQ.keyPoints.map(k => '- ' + k).join('\n')}` : '';
-    const prompt = `你是规范表达阅卷出身的表达教练，批改以下"口语转规范表达"改写练习。${profileCtx}
+    const prompt = `你是规范表达教练，批改以下"口语转规范表达"改写练习。${profileCtx}
 
 【题目】
 场景：${currentQ.context||''}　领域：${currentQ.domain}　难度：${currentQ.level}

@@ -236,6 +236,15 @@ a { color: var(--dai); }
 /* AI 生成中：换一题按钮呼吸提示 */
 .btn.generating { opacity:.7; animation:btnPulse 1.6s ease infinite; }
 @keyframes btnPulse { 0%,100%{opacity:.7} 50%{opacity:.45} }
+.question-loading {
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  max-width:880px; margin:0 auto 12px; padding:8px 12px;
+  border:1px solid var(--line); background:rgba(255,255,255,.48);
+  color:var(--muted); font-family:var(--font-sans); font-size:12px;
+}
+.question-loading.hidden { display:none; }
+.question-loading .loading-dot { width:7px; height:7px; border-radius:50%; background:var(--zhu); animation:btnPulse 1.2s ease infinite; }
+.question-loading .btn { margin-left:6px; }
 .btn-ink {
   background:var(--zhu); color:#f8f1e0; border-color:var(--zhu-deep);
   box-shadow:0 3px 12px -4px rgba(142,44,29,.55);
@@ -1395,6 +1404,49 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
 .history-pager { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 18px 0 6px; list-style: none; }
 .pager-info { font-family: var(--font-sans); font-size: 12px; color: var(--muted); letter-spacing: .1em; }
 .history-pager .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ============ 我的材料 ============ */
+.um-header { display:flex; align-items:center; gap:16px; margin-bottom:22px; flex-wrap:wrap; }
+.um-mode-switch { flex:none; }
+.um-section { animation:riseIn .3s var(--ease-out); }
+.um-textarea {
+  width:100%; font-family:var(--font-serif); font-size:15px; line-height:1.85;
+  border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px;
+  background:var(--paper-2); resize:vertical; min-height:80px;
+  transition:border-color .2s ease;
+}
+.um-textarea:focus { border-color:var(--zhu-line); outline:none; }
+.um-file-row { display:flex; align-items:center; gap:10px; margin-top:8px; }
+.um-file-info { font-size:12px; color:var(--muted); font-family:var(--font-sans); }
+.um-hint { font-size:12px; color:var(--muted); font-family:var(--font-sans); font-weight:400; }
+.um-required { font-size:11px; color:var(--zhu); font-family:var(--font-sans); font-weight:600; }
+.um-optional { font-size:11px; color:var(--muted); font-family:var(--font-sans); }
+.um-actions { display:flex; gap:10px; margin-top:18px; flex-wrap:wrap; }
+.um-result { margin-top:22px; padding:18px; border:1px solid var(--line); border-radius:var(--radius); background:var(--paper-2); }
+.um-result h4 { font-size:14px; letter-spacing:.1em; margin-bottom:10px; color:var(--dai-deep); }
+.um-result pre { font-size:13px; line-height:1.7; white-space:pre-wrap; word-break:break-all; font-family:var(--font-mono); max-height:300px; overflow-y:auto; }
+.um-result .um-original { border-left:3px solid var(--ink-30); padding-left:14px; margin-bottom:14px; }
+.um-result .um-ai { border-left:3px solid var(--dai-line); padding-left:14px; }
+.um-file-group { display:grid; gap:18px; }
+.um-list { list-style:none; }
+.um-list li {
+  display:flex; align-items:center; gap:12px; padding:12px 0;
+  border-bottom:1px solid var(--line);
+}
+.um-list li:last-child { border-bottom:none; }
+.um-list .um-item-title { flex:1; font-size:15px; font-weight:500; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.um-list .um-item-meta { font-size:11px; color:var(--muted); font-family:var(--font-sans); white-space:nowrap; }
+.um-list .um-item-status { font-size:11px; padding:2px 8px; border-radius:2px; font-family:var(--font-sans); }
+.um-list .um-item-status.ready { background:var(--dai-soft); color:var(--dai-deep); }
+.um-list .um-item-status.draft { background:var(--zhu-soft); color:var(--zhu); }
+.um-list .um-item-actions { display:flex; gap:6px; }
+.um-empty { font-size:14px; color:var(--muted); text-align:center; padding:40px 0; }
+.um-confirm-tag { display:inline-block; font-size:11px; padding:2px 7px; border-radius:2px; background:var(--zhu-soft); color:var(--zhu); font-family:var(--font-sans); margin-left:6px; }
+.um-source-tag { display:inline-block; font-size:11px; padding:2px 7px; border-radius:2px; background:var(--dai-soft); color:var(--dai); font-family:var(--font-sans); margin-right:6px; }
+@media (max-width: 640px) {
+  .um-header { flex-direction:column; align-items:stretch; }
+  .um-file-group { grid-template-columns:1fr; }
+}
 </style>
 </head>
 <body>
@@ -1433,6 +1485,7 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
     <button class="nav-btn active" data-tab="practice" aria-current="page">练习<span class="nav-en">PRACTICE</span></button>
     <button class="nav-btn" data-tab="scan">检查<span class="nav-en">PROOF</span></button>
     <button class="nav-btn" data-tab="archive">记录<span class="nav-en">RECORDS</span></button>
+    <button class="nav-btn" data-tab="materials">材料<span class="nav-en">IMPORT</span></button>
     <span id="navInk"></span>
   </nav>
 
@@ -1479,6 +1532,11 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
             <button id="btnSkip" class="btn btn-line btn-sm">换一题</button>
             <button id="btnRewriteSkip" class="btn btn-line btn-sm hidden">换一题</button>
           </span>
+        </div>
+        <div id="questionLoading" class="question-loading hidden" role="status" aria-live="polite">
+          <span class="loading-dot" aria-hidden="true"></span>
+          <span id="questionLoadingText">正在准备下一题，请稍候…</span>
+          <button id="btnCancelQuestion" class="btn btn-text btn-sm" type="button">返回当前题</button>
         </div>
 
         <!-- 概括训练 · 答题卡（一步一屏向导） -->
@@ -1658,6 +1716,87 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
         </div>
         <ul class="history-list" id="historyList"></ul>
       </section>
+    </section>
+
+    <!-- ============ 我的材料 ============ -->
+    <section id="panelMaterials" class="panel hidden">
+      <div class="um-header">
+        <span class="seg um-mode-switch" id="umModeSwitch" role="group" aria-label="导入模式">
+          <button class="seg-btn active" data-um="material" aria-pressed="true">新建材料练习</button>
+          <button class="seg-btn" data-um="true-question" aria-pressed="false">导入完整真题</button>
+        </span>
+        <button id="btnUmList" class="btn btn-line btn-sm">已保存材料</button>
+      </div>
+
+      <!-- 新建材料练习 -->
+      <div id="umMaterial" class="um-section">
+        <div class="form-group">
+          <label>材料文本 <span class="um-hint">粘贴或上传 .txt / .md 文件</span></label>
+          <textarea id="umMaterialText" class="um-textarea" rows="10" placeholder="在此粘贴材料原文……"></textarea>
+          <div class="um-file-row">
+            <button id="btnUmUploadMaterial" class="btn btn-line btn-sm" type="button">上传材料文件</button>
+            <span id="umMaterialFileInfo" class="um-file-info"></span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>训练方向</label>
+          <select id="umTrainDir">
+            <option value="summary">概括训练</option>
+            <option value="rewrite">规范改写</option>
+          </select>
+        </div>
+        <div class="um-actions">
+          <button id="btnUmGenerate" class="btn btn-ink">生成练习</button>
+          <button id="btnUmSaveDraft" class="btn btn-line">保存为草稿</button>
+        </div>
+        <div id="umGenerateResult" class="um-result hidden"></div>
+      </div>
+
+      <!-- 导入完整真题 -->
+      <div id="umTrueQ" class="um-section hidden">
+        <div class="um-file-group">
+          <div class="form-group">
+            <label>材料 <span class="um-required">必填</span></label>
+            <textarea id="umTqMaterial" class="um-textarea" rows="6" placeholder="原始材料文本……"></textarea>
+            <div class="um-file-row">
+              <button class="btn btn-line btn-sm um-upload" data-target="umTqMaterial" type="button">上传材料</button>
+              <span class="um-file-info" id="umTqMaterialInfo"></span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>题目 <span class="um-optional">可选</span></label>
+            <textarea id="umTqQuestion" class="um-textarea" rows="4" placeholder="原始题目文本……"></textarea>
+            <div class="um-file-row">
+              <button class="btn btn-line btn-sm um-upload" data-target="umTqQuestion" type="button">上传题目</button>
+              <span class="um-file-info" id="umTqQuestionInfo"></span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>答案 <span class="um-optional">可选</span></label>
+            <textarea id="umTqAnswer" class="um-textarea" rows="4" placeholder="原始答案文本……"></textarea>
+            <div class="um-file-row">
+              <button class="btn btn-line btn-sm um-upload" data-target="umTqAnswer" type="button">上传答案</button>
+              <span class="um-file-info" id="umTqAnswerInfo"></span>
+            </div>
+          </div>
+        </div>
+        <div class="um-actions">
+          <button id="btnUmParse" class="btn btn-ink">解析真题</button>
+          <button id="btnUmSaveTq" class="btn btn-line" disabled>保存为个人真题</button>
+          <button id="btnUmCancelTq" class="btn btn-text">取消</button>
+        </div>
+        <div id="umParseResult" class="um-result hidden"></div>
+      </div>
+
+      <!-- 材料列表 -->
+      <div id="umListView" class="um-section hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <h3 class="sec-title" style="margin:0"><span class="sec-no">▸</span>已保存材料</h3>
+          <button id="btnUmBackFromList" class="btn btn-line btn-sm">返回</button>
+        </div>
+        <ul id="umListItems" class="um-list"></ul>
+        <p id="umListEmpty" class="um-empty hidden">还没有导入的材料。</p>
+      </div>
     </section>
   </main>
 </div>
@@ -2092,6 +2231,69 @@ function pushHistory(rec) {
   bumpVolCache();
 }
 
+// ============================================================
+// USER MATERIALS DATA LAYER
+// ============================================================
+const USER_MATERIALS_KEY = 'formal_expression_user_materials_v1';
+
+function loadUserMaterials() {
+  try {
+    const raw = localStorage.getItem(USER_MATERIALS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { console.warn('用户材料读取失败', e); return []; }
+}
+function saveUserMaterials(list) {
+  try {
+    localStorage.setItem(USER_MATERIALS_KEY, JSON.stringify(list));
+  } catch(e) {
+    console.warn('用户材料保存失败', e);
+    showToast('材料保存失败，本地存储可能已满');
+  }
+}
+function addUserMaterial(item) {
+  const list = loadUserMaterials();
+  list.push(item);
+  saveUserMaterials(list);
+}
+function updateUserMaterial(id, patch) {
+  const list = loadUserMaterials();
+  const idx = list.findIndex(m => m.id === id);
+  if (idx >= 0) { Object.assign(list[idx], patch, { updatedAt: new Date().toISOString() }); saveUserMaterials(list); }
+}
+function deleteUserMaterial(id) {
+  const list = loadUserMaterials().filter(m => m.id !== id);
+  saveUserMaterials(list);
+}
+function getUserMaterial(id) {
+  return loadUserMaterials().find(m => m.id === id) || null;
+}
+function genMaterialId() {
+  return 'um_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+}
+
+function validateUserMaterialResult(result, fallbackMaterial, requirePracticeData = false) {
+  if (!result || typeof result !== 'object') throw new Error('AI 返回结果不是有效对象');
+  const material = String(result.material || fallbackMaterial || '').trim();
+  const points = Array.isArray(result.points) ? result.points : [];
+  const slices = Array.isArray(result.slices) ? result.slices : [];
+  if (!material) throw new Error('AI 返回结果缺少材料文本');
+  if (requirePracticeData && (!slices.length || !points.length)) {
+    throw new Error('AI 返回结果缺少切片或采分点，无法生成可练习题目');
+  }
+  slices.forEach((slice, index) => {
+    const text = String(slice && slice.text || '').trim();
+    if (text && !material.includes(text)) {
+      throw new Error(`第 ${index + 1} 个切片在材料中找不到对应文本`);
+    }
+    if (slice && slice.valid) {
+      if (!Number.isInteger(slice.point) || slice.point < 0 || slice.point >= points.length) {
+        throw new Error(`第 ${index + 1} 个切片的采分点索引越界`);
+      }
+    }
+  });
+  return result;
+}
+
 function updateFileStatus(connected, abnormal = false, pending = false) {
   const el = $('#fileStatus');
   el.classList.toggle('connected', !!connected && !abnormal && !pending);
@@ -2316,8 +2518,9 @@ function switchTab(tab) {
   $('#panelPractice').classList.toggle('hidden', tab !== 'practice');
   $('#panelScan').classList.toggle('hidden', tab !== 'scan');
   $('#panelArchive').classList.toggle('hidden', tab !== 'archive');
+  $('#panelMaterials').classList.toggle('hidden', tab !== 'materials');
   // 轻入场：GSAP 错峰浮入；降级时只播一次 200ms CSS fade，避免旧 riseIn 反复重播的闪烁
-  const panel = { practice: '#panelPractice', scan: '#panelScan', archive: '#panelArchive' }[tab];
+  const panel = { practice: '#panelPractice', scan: '#panelScan', archive: '#panelArchive', materials: '#panelMaterials' }[tab];
   const panelEl = panel ? $(panel) : null;
   if (panelEl) {
     if (MOTION) {
@@ -2333,6 +2536,7 @@ function switchTab(tab) {
   updateNavInk();
   if (tab === 'scan') renderScanHistory();
   if (tab === 'archive') renderArchive();
+  if (tab === 'materials' && !$('#umListView').classList.contains('hidden')) renderUmList();
 }
 
 // INLINE DATA — 词库与题库内联
@@ -4713,6 +4917,34 @@ async function confirmDiscardIfDraft() {
 
 // 防并发：AI 出题请求在途标记（练习与摸底共用）
 let _questionGenerating = false;
+let _questionRequestId = 0;
+let _questionLoadingPrevMode = null;
+
+function setQuestionLoading(visible, text = '正在准备下一题，请稍候…') {
+  const box = $('#questionLoading');
+  if (!box) return;
+  $('#questionLoadingText').textContent = text;
+  box.classList.toggle('hidden', !visible);
+}
+
+function cancelQuestionGeneration() {
+  if (!_questionGenerating) return;
+  _questionRequestId++;
+  _questionGenerating = false;
+  setQuestionControlsEnabled(true);
+  $('#btnRewriteSkip').classList.remove('generating');
+  $('#btnRewriteSkip').disabled = false;
+  $('#rewriteAnswerInput').disabled = false;
+  $('#btnRewriteSubmit').disabled = !$('#rewriteAnswerInput').value.trim();
+  setQuestionLoading(false);
+  const previous = _questionLoadingPrevMode;
+  _questionLoadingPrevMode = null;
+  if (previous && previous !== getTrainingMode()) {
+    setTrainingMode(previous, false);
+    showPracticeQuestion();
+  }
+  showToast('已返回当前题');
+}
 
 const rewriteQuestionCache = new Map();
 
@@ -4725,7 +4957,9 @@ async function showRewriteQuestion(force = false) {
 
   if (D.settings.mode === 'online' && getApiConfig()) {
     if (_questionGenerating) return;
+    const requestId = ++_questionRequestId;
     _questionGenerating = true;
+    setQuestionLoading(true, '正在生成规范改写题，通常需要 5–15 秒…');
     setQuestionControlsEnabled(false);
     $('#btnRewriteSkip').classList.add('generating');
     const ctx = { training: D.settings.trainingMode, level: getSelectedDifficulty(), domain: $('#domainSelect').value };
@@ -4742,15 +4976,16 @@ async function showRewriteQuestion(force = false) {
     try {
       const q = await aiGenerateQuestion();
       rewriteQuestionCache.set(cacheKey, q);
-      if (ctx.training === D.settings.trainingMode && ctx.level === getSelectedDifficulty()
+      if (requestId === _questionRequestId && ctx.training === D.settings.trainingMode && ctx.level === getSelectedDifficulty()
           && ctx.domain === $('#domainSelect').value) {
         showQuestionOnDesk(q);
         $('#rewriteAnswerInput').placeholder = '在稿纸上写下你的改写……';
       }
     } catch(e) {
+      if (requestId !== _questionRequestId) return;
       console.warn('AI question gen failed, fallback to bank', e);
       const fallback = pickQuestion();
-      if (fallback && ctx.training === D.settings.trainingMode && ctx.level === getSelectedDifficulty()
+      if (requestId === _questionRequestId && fallback && ctx.training === D.settings.trainingMode && ctx.level === getSelectedDifficulty()
           && ctx.domain === $('#domainSelect').value) {
         showQuestionOnDesk(fallback);
         showToast('出题未成，已换用题库');
@@ -4758,7 +4993,10 @@ async function showRewriteQuestion(force = false) {
         showToast('出题未成，请检查设置');
       }
     } finally {
+      if (requestId !== _questionRequestId) return;
       _questionGenerating = false;
+      setQuestionLoading(false);
+      _questionLoadingPrevMode = null;
       setQuestionControlsEnabled(true);
       $('#btnRewriteSkip').classList.remove('generating');
       $('#rewriteAnswerInput').placeholder = '在稿纸上写下你的改写……';
@@ -7402,6 +7640,9 @@ function initApp() {
   // Nav
   $$('.nav-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
 
+  // Materials module
+  initMaterialsModule();
+
   // Difficulty
   $$('.diff-btn').forEach(b => b.addEventListener('click', async () => {
     if (_questionGenerating || b.classList.contains('active')) return;
@@ -7424,8 +7665,10 @@ function initApp() {
   $$('#trainingSwitch .seg-btn').forEach(b => b.addEventListener('click', async () => {
     if (_questionGenerating || b.classList.contains('active')) return;
     if (!(await confirmDiscardIfDraft())) return;
+    _questionLoadingPrevMode = getTrainingMode();
     setTrainingMode(b.dataset.training);
   }));
+  $('#btnCancelQuestion').addEventListener('click', cancelQuestionGeneration);
 
   // 字数统计 + 空稿置灰（防错优于报错）
   $('#answerInput').addEventListener('input', () => { updateCharCount(); $('#btnSubmit').disabled = !$('#answerInput').value.trim(); });
@@ -7632,6 +7875,383 @@ function initApp() {
         if (nx) { e.preventDefault(); nx.click(); }
       }
     }
+  });
+}
+
+// ============================================================
+// USER MATERIALS MODULE
+// ============================================================
+let _umCurrentMode = 'material'; // 'material' | 'true-question'
+let _umLastGenerated = null; // 上一次 AI 生成结果
+
+// -- File reading helper --
+function readTextFile(accept) {
+  return new Promise((resolve, reject) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = accept || '.txt,.md';
+    input.onchange = async () => {
+      const f = input.files[0];
+      if (!f) { reject(new Error('未选择文件')); return; }
+      const ext = f.name.split('.').pop().toLowerCase();
+      if (!['txt','md'].includes(ext)) { reject(new Error('仅支持 .txt 和 .md 文件')); return; }
+      try {
+        const text = await f.text();
+        if (!text.trim()) { reject(new Error('文件内容为空')); return; }
+        resolve({ text: text.trim(), name: f.name, size: f.size });
+      } catch(e) { reject(new Error('文件读取失败')); }
+    };
+    input.oncancel = () => reject(new Error('取消'));
+    input.click();
+  });
+}
+
+// -- Mode switching --
+function umSwitchMode(mode) {
+  _umCurrentMode = mode;
+  $$('#umModeSwitch .seg-btn').forEach(b => {
+    const on = b.dataset.um === mode;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-pressed', String(on));
+  });
+  $('#umMaterial').classList.toggle('hidden', mode !== 'material');
+  $('#umTrueQ').classList.toggle('hidden', mode !== 'true-question');
+  $('#umListView').classList.add('hidden');
+}
+
+function umShowList() {
+  $('#umMaterial').classList.add('hidden');
+  $('#umTrueQ').classList.add('hidden');
+  $('#umListView').classList.remove('hidden');
+  renderUmList();
+}
+function umHideList() {
+  $('#umListView').classList.add('hidden');
+  if (_umCurrentMode === 'material') $('#umMaterial').classList.remove('hidden');
+  else $('#umTrueQ').classList.remove('hidden');
+}
+
+// -- Render list --
+function renderUmList() {
+  const list = loadUserMaterials();
+  const ul = $('#umListItems');
+  const empty = $('#umListEmpty');
+  if (!list.length) { ul.innerHTML = ''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+  ul.innerHTML = list.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt)).map(m => {
+    const statusCls = m.status === 'ready' ? 'ready' : 'draft';
+    const statusText = m.status === 'ready' ? '可练习' : '草稿';
+    const modeText = m.mode === 'true-question' ? '真题' : '材料';
+    const date = m.updatedAt ? new Date(m.updatedAt).toLocaleDateString() : '';
+    return `<li data-id="${m.id}">
+      <span class="um-source-tag">${esc(modeText)}</span>
+      <span class="um-item-title">${esc(m.title || '未命名')}</span>
+      <span class="um-item-meta">${date}</span>
+      <span class="um-item-status ${statusCls}">${statusText}</span>
+      <span class="um-item-actions">
+        ${m.status === 'ready' ? `<button class="btn btn-line btn-sm um-practice-btn" data-id="${m.id}">练习</button>` : ''}
+        <button class="btn btn-text btn-sm um-delete-btn" data-id="${m.id}" style="color:var(--zhu)">删除</button>
+      </span>
+    </li>`;
+  }).join('');
+  // Bind events
+  ul.querySelectorAll('.um-delete-btn').forEach(btn => btn.addEventListener('click', async (e) => {
+    const id = e.target.dataset.id;
+    if (await confirmDialog({ title: '删除材料', message: '确定删除这份材料？删除后无法恢复。', confirmText: '删除' })) {
+      deleteUserMaterial(id);
+      renderUmList();
+      showToast('已删除');
+    }
+  }));
+  ul.querySelectorAll('.um-practice-btn').forEach(btn => btn.addEventListener('click', (e) => {
+    startUserMaterialPractice(e.target.dataset.id);
+  }));
+}
+
+// -- Save draft (material mode) --
+function umSaveDraft() {
+  const text = $('#umMaterialText').value.trim();
+  if (!text) { showToast('请先输入或上传材料'); return; }
+  const item = {
+    id: genMaterialId(),
+    mode: 'material',
+    status: 'draft',
+    title: text.slice(0, 20) + (text.length > 20 ? '…' : ''),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    original: { material: text, question: '', answer: '', files: {} },
+    generated: null,
+    provenance: { sourceType: '用户上传材料', generatedByAI: false, userConfirmed: false, confirmedAt: null }
+  };
+  addUserMaterial(item);
+  showToast('草稿已保存');
+}
+
+function inferUserMaterialLevel(result, material) {
+  const length = (material || '').replace(/\s/g, '').length;
+  const pointCount = Array.isArray(result?.points) ? result.points.length : 0;
+  if (pointCount <= 3 && length <= 520) return 'L1';
+  if (pointCount <= 4 && length <= 720) return 'L2';
+  return 'L3';
+}
+
+// -- Generate practice (material mode) --
+async function umGeneratePractice() {
+  const text = $('#umMaterialText').value.trim();
+  if (!text) { showToast('请先输入或上传材料'); return; }
+  if (text.length < 50) { showToast('材料内容过短，至少需要 50 字'); return; }
+  const cfg = getApiConfig();
+  if (!cfg) { showToast('API 未配置，请先在设置中配置 AI 接口'); return; }
+  const dir = $('#umTrainDir').value;
+  const btn = $('#btnUmGenerate');
+  btn.disabled = true; btn.textContent = '生成中…';
+  const resultBox = $('#umGenerateResult');
+  resultBox.classList.add('hidden');
+  try {
+    const systemPrompt = AI_SYSTEM_BASE + `\n\n你现在需要根据用户提供的材料，生成一道${dir === 'summary' ? '概括训练' : '规范改写'}练习题。
+要求：
+1. 只能根据材料内容出题，不得补造事实
+2. 生成题目要求(prompt)、练习用材料(material)、切片(slices)、采分点(points)、组织链(buildChain)、参考答案(ref)
+3. slices 每个切片包含 text(材料原文片段)、punct(分隔符)、valid(是否有效信息)、point(归属采分点索引)、reason(原因)
+4. points 每个采分点包含 name(上位概括词)、keys(关键词数组)、acceptable(可接受的同义表达数组)
+5. type: 问题|做法|成效|变化|经验
+6. level: L1|L2|L3。按材料实际密度判断：3个核心点且材料不超过约520字为L1；4个核心点且材料不超过约720字为L2；更高密度才为L3，不要为了显得正式或内容丰富随意上调难度。
+7. 参考答案必须使用“总括句 + 编号 + 概括词 + 具体事实”的结构。每个要点都要写清材料中的动作、对象或结果，不能只堆“整合资源、搭建平台、提升水平”等空泛概括词。
+8. 参考答案不要机械套用“主要做法有：一是……二是……三是……”；可以自然表达，但编号和层次必须清楚。避免语病、搭配不当和宣传稿式套话。
+9. 概括词必须能从材料事实中提炼，具体事实优先使用材料原词；不得把材料中没有的目的、效果或因果关系补写进去。
+10. 所有字段必须用简体中文`;
+    const userMsg = `材料原文：\n${text}\n\n训练方向：${dir === 'summary' ? '概括训练' : '规范改写'}\n\n请返回严格的 JSON 对象。`;
+    const raw = await callAI([{ role: 'system', content: systemPrompt }, { role: 'user', content: userMsg }], true);
+    const result = JSON.parse(raw.trim().replace(/^```json\s*/, '').replace(/```\s*$/, ''));
+    validateUserMaterialResult(result, text, true);
+    result.level = inferUserMaterialLevel(result, text);
+    _umLastGenerated = result;
+    // Save as ready material
+    const item = {
+      id: genMaterialId(),
+      mode: 'material',
+      status: 'ready',
+      title: (result.title || text.slice(0, 20)) + (text.length > 20 && !result.title ? '…' : ''),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      original: { material: text, question: '', answer: '', files: {} },
+      generated: {
+        type: result.type || '做法',
+        level: result.level || 'L1',
+        domain: '用户材料',
+        prompt: result.prompt || '',
+        material: result.material || text,
+        slices: result.slices || [],
+        points: result.points || [],
+        buildChain: result.buildChain || [],
+        answerStructure: result.answerStructure || {},
+        ref: result.ref || '',
+        aiAnalysis: null
+      },
+      provenance: { sourceType: '用户上传材料', generatedByAI: true, userConfirmed: false, confirmedAt: null }
+    };
+    addUserMaterial(item);
+    // Show result
+    resultBox.innerHTML = `<h4>✔ 生成成功</h4>
+      <div class="um-original"><strong>来源：</strong>用户上传材料 · <strong>题目：</strong>AI 生成 · <strong>参考答案：</strong>AI 生成，待用户确认</div>
+      <div class="um-ai">
+        <p><strong>题目：</strong>${esc(result.prompt || '')}</p>
+        <p><strong>题型：</strong>${esc(result.type || '')} · <strong>难度：</strong>${esc(result.level || '')}</p>
+        <p><strong>采分点：</strong>${(result.points || []).map(p => esc(p.name)).join('、')}</p>
+        <p><strong>参考答案：</strong>${esc(result.ref || '')}</p>
+      </div>
+      <div class="um-actions" style="margin-top:14px">
+        <button class="btn btn-ink btn-sm" onclick="startUserMaterialPractice('${item.id}')">开始练习</button>
+        <button class="btn btn-line btn-sm" onclick="umConfirmGenerated('${item.id}')">确认结果</button>
+      </div>`;
+    resultBox.classList.remove('hidden');
+    showToast('练习已生成，可直接开始或在列表中查看');
+  } catch(e) {
+    resultBox.innerHTML = `<h4 style="color:var(--zhu)">✘ 生成失败</h4><p>${esc(e.message)}</p>`;
+    resultBox.classList.remove('hidden');
+  } finally {
+    btn.disabled = false; btn.textContent = '生成练习';
+  }
+}
+
+function umConfirmGenerated(id) {
+  updateUserMaterial(id, { provenance: { sourceType: '用户上传材料', generatedByAI: true, userConfirmed: true, confirmedAt: new Date().toISOString() } });
+  showToast('已确认');
+}
+
+// -- Parse true question --
+async function umParseTrueQuestion() {
+  const material = $('#umTqMaterial').value.trim();
+  const question = $('#umTqQuestion').value.trim();
+  const answer = $('#umTqAnswer').value.trim();
+  if (!material) { showToast('请先输入或上传材料'); return; }
+  const cfg = getApiConfig();
+  // 无 API 时仍可保存原文
+  if (!cfg) {
+    const item = {
+      id: genMaterialId(),
+      mode: 'true-question',
+      status: 'draft',
+      title: (question || material).slice(0, 20) + '…',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      original: { material, question, answer, files: {} },
+      generated: null,
+      provenance: { sourceType: '用户导入真题', generatedByAI: false, userConfirmed: false, confirmedAt: null }
+    };
+    addUserMaterial(item);
+    showToast('API 未配置，已保存原文为草稿（配置后可重新解析）');
+    $('#btnUmSaveTq').disabled = true;
+    return;
+  }
+  const btn = $('#btnUmParse');
+  btn.disabled = true; btn.textContent = '解析中…';
+  const resultBox = $('#umParseResult');
+  resultBox.classList.add('hidden');
+  try {
+    const systemPrompt = AI_SYSTEM_BASE + `\n\n你现在需要对用户提供的真题进行结构化提取。
+要求：
+1. 不改写原始材料
+2. 不补充原文没有的事实
+3. 无法判断时放入 uncertainties
+4. 不确定题型时返回空值并说明原因
+5. extractedReference 只是 AI 提取结果，不等于官方答案
+6. 所有字段必须用简体中文
+
+输出 JSON 格式: { type, level, prompt, points:[], slices:[], buildChain:[], answerStructure:{}, extractedReference:"", uncertainties:[], warnings:[] }`;
+    const userMsg = `原始材料：\n${material}\n\n${question ? '原始题目：\n' + question + '\n\n' : ''}${answer ? '原始答案：\n' + answer : ''}`;
+    const raw = await callAI([{ role: 'system', content: systemPrompt }, { role: 'user', content: userMsg }], true);
+    const result = JSON.parse(raw.trim().replace(/^```json\s*/, '').replace(/```\s*$/, ''));
+    validateUserMaterialResult(result, material, false);
+    // Show result with original vs AI separation
+    resultBox.innerHTML = `<h4>✔ 解析完成</h4>
+      <div class="um-original">
+        <strong>原始内容：</strong>
+        <p>材料：${esc(material.slice(0, 100))}${material.length > 100 ? '…' : ''}</p>
+        ${question ? '<p>题目：' + esc(question.slice(0, 80)) + '</p>' : ''}
+        ${answer ? '<p>答案：' + esc(answer.slice(0, 80)) + (answer.length > 80 ? '…' : '') + '</p>' : ''}
+      </div>
+      <div class="um-ai">
+        <strong>AI 结构化内容：</strong>
+        <p>题型：${esc(result.type || '未识别')} · 难度：${esc(result.level || '未识别')}</p>
+        <p>题目要求：${esc(result.prompt || '未提取')}</p>
+        <p>采分点：${(result.points || []).map(p => esc(p.name || '')).join('、') || '未提取'}</p>
+        ${result.extractedReference ? '<p>AI 提取参考答案：' + esc(result.extractedReference.slice(0, 150)) + '<span class="um-confirm-tag">需核对</span></p>' : ''}
+        ${result.uncertainties && result.uncertainties.length ? '<p style="color:var(--zhu)">不确定项：' + result.uncertainties.map(u => esc(u)).join('；') + '</p>' : ''}
+      </div>`;
+    resultBox.classList.remove('hidden');
+    // Enable save button
+    _umLastGenerated = result;
+    $('#btnUmSaveTq').disabled = false;
+    $('#btnUmSaveTq').onclick = () => {
+      const item = {
+        id: genMaterialId(),
+        mode: 'true-question',
+        status: 'ready',
+        title: (result.prompt || question || material.slice(0, 20)) + '…',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        original: { material, question, answer, files: {} },
+        generated: {
+          type: result.type || '',
+          level: result.level || 'L1',
+          domain: '用户真题',
+          prompt: result.prompt || question || '',
+          material: material,
+          slices: result.slices || [],
+          points: result.points || [],
+          buildChain: result.buildChain || [],
+          answerStructure: result.answerStructure || {},
+          ref: result.extractedReference || '',
+          aiAnalysis: { extractedReference: result.extractedReference, uncertainties: result.uncertainties, warnings: result.warnings }
+        },
+        provenance: { sourceType: '用户导入真题', generatedByAI: true, userConfirmed: false, confirmedAt: null }
+      };
+      addUserMaterial(item);
+      showToast('已保存为个人真题');
+      $('#btnUmSaveTq').disabled = true;
+    };
+  } catch(e) {
+    resultBox.innerHTML = `<h4 style="color:var(--zhu)">✘ 解析失败</h4><p>${esc(e.message)}</p><p>原始内容已保留在上方输入框中。</p>`;
+    resultBox.classList.remove('hidden');
+  } finally {
+    btn.disabled = false; btn.textContent = '解析真题';
+  }
+}
+
+// -- Practice integration --
+function startUserMaterialPractice(id) {
+  const m = getUserMaterial(id);
+  if (!m || !m.generated) {
+    showToast('这份材料还没有完整的 AI 结构化结果，可以先阅读，或重新解析后练习。');
+    return;
+  }
+  const g = m.generated;
+  if (!g.slices || !g.slices.length || !g.points || !g.points.length) {
+    showToast('这份材料还没有完整的切片或采分点，无法进入完整练习流程。');
+    return;
+  }
+  // Construct a temporary question object compatible with existing practice flow
+  const tempQ = {
+    id: m.id,
+    type: g.type || '做法',
+    level: g.level || 'L2',
+    domain: g.domain || '用户材料',
+    context: g.prompt || '',
+    material: g.material || m.original.material,
+    slices: g.slices,
+    points: g.points,
+    buildChain: g.buildChain || [],
+    answerStructure: g.answerStructure || {},
+    ref: g.ref || '',
+    source: m.provenance.sourceType,
+    sourceUrl: '',
+    sourceDate: '',
+    sourceType: m.provenance.generatedByAI ? 'AI生成训练材料（非离线来源原文）' : '',
+    _source: 'user-material',
+    _materialId: m.id
+  };
+  // Switch to practice tab and render
+  switchTab('practice');
+  setTrainingMode('summary', false);
+  renderSummaryQuestion(tempQ);
+}
+
+// -- Init materials events --
+function initMaterialsModule() {
+  // Mode switch
+  $$('#umModeSwitch .seg-btn').forEach(b => b.addEventListener('click', () => umSwitchMode(b.dataset.um)));
+  // List
+  $('#btnUmList').addEventListener('click', umShowList);
+  $('#btnUmBackFromList').addEventListener('click', umHideList);
+  // Material mode
+  $('#btnUmUploadMaterial').addEventListener('click', async () => {
+    try {
+      const f = await readTextFile('.txt,.md');
+      $('#umMaterialText').value = f.text;
+      $('#umMaterialFileInfo').textContent = `${f.name}（${f.text.length} 字）`;
+    } catch(e) { if (e.message !== '取消') showToast(e.message); }
+  });
+  $('#btnUmGenerate').addEventListener('click', umGeneratePractice);
+  $('#btnUmSaveDraft').addEventListener('click', umSaveDraft);
+  // True question mode uploads
+  $$('.um-upload').forEach(btn => btn.addEventListener('click', async () => {
+    const targetId = btn.dataset.target;
+    try {
+      const f = await readTextFile('.txt,.md');
+      $('#' + targetId).value = f.text;
+      const infoEl = btn.parentElement.querySelector('.um-file-info');
+      if (infoEl) infoEl.textContent = `${f.name}（${f.text.length} 字）`;
+    } catch(e) { if (e.message !== '取消') showToast(e.message); }
+  }));
+  $('#btnUmParse').addEventListener('click', umParseTrueQuestion);
+  $('#btnUmCancelTq').addEventListener('click', () => {
+    $('#umTqMaterial').value = '';
+    $('#umTqQuestion').value = '';
+    $('#umTqAnswer').value = '';
+    $('#umParseResult').classList.add('hidden');
+    $('#btnUmSaveTq').disabled = true;
+    $$('#umTrueQ .um-file-info').forEach(el => el.textContent = '');
   });
 }
 

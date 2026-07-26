@@ -8,6 +8,10 @@
 <meta name="theme-color" content="#f4f0e6" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#15181d" media="(prefers-color-scheme: dark)">
 <meta name="description" content="规范表达练习 — 从材料找点、归类、概括到规范表达">
+<meta property="og:title" content="规范表达练习 · 从材料到规范答案">
+<meta property="og:description" content="申论规范表达练习工具 — 从材料找点、归类、概括到规范表达">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="规范表达练习">
@@ -343,6 +347,12 @@ select:hover { border-color:var(--line-strong); }
 .sum-step-head { display:flex; align-items:baseline; gap:10px; margin-bottom:12px; font-weight:700; letter-spacing:.08em; }
 .sum-source { margin-top:10px; font-size:12px; color:var(--muted); line-height:1.7; }
 .sum-source a { color:var(--zhu); text-decoration:none; border-bottom:1px solid rgba(176,58,40,.3); word-break:break-all; }
+.free-select-tools { display:none; margin-top:12px; padding:10px 12px; border:1px dashed var(--line-strong); background:rgba(255,255,255,.32); font-family:var(--font-sans); font-size:12px; color:var(--muted); }
+.free-select-tools.visible { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.free-select-preview { flex:1 1 240px; min-width:0; color:var(--ink-soft); line-height:1.6; }
+.free-select-preview:empty { display:none; }
+.free-select-result { flex-basis:100%; color:var(--dai-deep); line-height:1.6; }
+.free-select-result.invalid { color:var(--zhu); }
 /* 找点：可点选切片 */
 .sum-segs { font-family:var(--font-serif); font-size:16px; line-height:2.3; text-align:justify; border-left:3px solid var(--zhu); padding:4px 4px 4px 16px; }
 .sum-seg { cursor:pointer; border-radius:2px; padding:1px 1px; transition:background .13s, color .13s; -webkit-box-decoration-break:clone; box-decoration-break:clone; border-bottom:1.5px dotted var(--line-strong); }
@@ -1565,6 +1575,11 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
                 <div class="sum-stem" id="sumStem"></div>
                 <div class="meta-context" id="summaryContext"></div>
                 <blockquote class="oral summary-material" id="summaryMaterial"></blockquote>
+                <div id="freeSelectTools" class="free-select-tools" aria-live="polite">
+                  <span class="free-select-preview" id="freeSelectPreview"></span>
+                  <button id="btnFreeSelectJudge" class="btn btn-line btn-sm" type="button" disabled>AI 判断选中内容</button>
+                  <span id="freeSelectResult" class="free-select-result"></span>
+                </div>
                 <div class="sum-source" id="summarySource"></div>
               </div>
             </div>
@@ -4934,19 +4949,30 @@ function cancelQuestionGeneration() {
   setQuestionControlsEnabled(true);
   $('#btnRewriteSkip').classList.remove('generating');
   $('#btnRewriteSkip').disabled = false;
-  $('#rewriteAnswerInput').disabled = false;
-  $('#btnRewriteSubmit').disabled = !$('#rewriteAnswerInput').value.trim();
   setQuestionLoading(false);
   const previous = _questionLoadingPrevMode;
   _questionLoadingPrevMode = null;
+  const snap = _questionDeskSnapshot;
+  _questionDeskSnapshot = null;
   if (previous && previous !== getTrainingMode()) {
+    // 跨模式取消：生成期间原题卡片从未被隐藏，恢复模式按钮与选题栏即可，不重抽题
     setTrainingMode(previous, false);
-    showPracticeQuestion();
+  } else if (snap) {
+    // 同模式「换一题」取消：还原生成前的题面与稿纸
+    showQuestionOnDesk(snap.q);
+    $('#rewriteAnswerInput').value = snap.draft;
+    $('#btnRewriteSubmit').disabled = !snap.draft.trim();
+    updateCharCount();
+  } else {
+    // 无快照（如首次进入即在线生成）：兜底给一道题库题，避免骨架屏残留
+    const q = pickQuestion();
+    if (q) showQuestionOnDesk(q);
   }
   showToast('已返回当前题');
 }
 
 const rewriteQuestionCache = new Map();
+let _questionDeskSnapshot = null; // 在途生成开始前的改写书案快照（取消时还原）
 
 async function showRewriteQuestion(force = false) {
   const cacheKey = `rewrite:${$('#domainSelect').value}:${getSelectedDifficulty()}`;
@@ -4959,6 +4985,10 @@ async function showRewriteQuestion(force = false) {
     if (_questionGenerating) return;
     const requestId = ++_questionRequestId;
     _questionGenerating = true;
+    // 覆盖书案 UI 之前保存快照，供「返回当前题」还原（概括题无 oral，跨模式走模式恢复分支）
+    _questionDeskSnapshot = (currentQ && currentQ.oral)
+      ? { q: currentQ, draft: $('#rewriteAnswerInput').value }
+      : null;
     setQuestionLoading(true, '正在生成规范改写题，通常需要 5–15 秒…');
     setQuestionControlsEnabled(false);
     $('#btnRewriteSkip').classList.add('generating');
@@ -4997,6 +5027,7 @@ async function showRewriteQuestion(force = false) {
       _questionGenerating = false;
       setQuestionLoading(false);
       _questionLoadingPrevMode = null;
+      _questionDeskSnapshot = null;
       setQuestionControlsEnabled(true);
       $('#btnRewriteSkip').classList.remove('generating');
       $('#rewriteAnswerInput').placeholder = '在稿纸上写下你的改写……';
@@ -5260,7 +5291,58 @@ function sumGoStep(n) {
 }
 
 // ── Slice selection ──
+let _freeSelectionText = '';
 function sumSelectedSlices() { return $$('#sumSegs .sum-seg.selected').map(s => Number(s.dataset.i)); }
+function renderSummarySlices() {
+  const q = currentQ;
+  $('#sumSegs').innerHTML = q.slices.map((sl, i) =>
+    `<span class="sum-seg${sl.free ? ' free-seg' : ''}" data-i="${i}">${esc(sl.text)}${esc(sl.punct || '')}</span>`).join('');
+}
+function updateFreeSelectTools() {
+  const tools = $('#freeSelectTools');
+  if (!tools) return;
+  const enabled = D.settings.mode === 'online' && !!getApiConfig();
+  tools.classList.toggle('visible', enabled);
+  $('#freeSelectPreview').textContent = _freeSelectionText ? `已选：${_freeSelectionText}` : '在线模式可直接拖选材料中的任意连续文字';
+  $('#btnFreeSelectJudge').disabled = !enabled || !_freeSelectionText;
+  if (!enabled) $('#freeSelectResult').textContent = '';
+}
+async function judgeFreeSelection() {
+  const text = _freeSelectionText.trim();
+  if (!text || !currentQ) return;
+  const btn = $('#btnFreeSelectJudge');
+  const resultEl = $('#freeSelectResult');
+  btn.disabled = true; btn.textContent = 'AI 判断中…';
+  resultEl.className = 'free-select-result'; resultEl.textContent = '正在判断这段文字是否构成可采事实…';
+  try {
+    const prompt = `题目：${currentQ.prompt || ''}\n题型：${currentQ.type || ''}\n采分点：${(currentQ.points || []).map((p, i) => `${i}：${p.name || ''}`).join('；')}\n材料中用户自由选中的文字：${text}\n\n请判断这段文字是否是支撑本题答案的有效事实。只能根据原文，不得补造。返回严格 JSON：{"valid":true或false,"point":有效时对应的采分点索引，否则为-1,"reason":"简短中文理由"}`;
+    const raw = await callAI([{role:'system',content:AI_SYSTEM_BASE + ' 你是申论材料找点审阅者。只返回 JSON，所有说明使用简体中文。'}, {role:'user',content:prompt}], true);
+    const verdict = parseJSON(raw);
+    const pointIndex = Number(verdict.point);
+    const valid = verdict.valid === true && Number.isInteger(pointIndex) && pointIndex >= 0 && pointIndex < (currentQ.points || []).length;
+    resultEl.className = `free-select-result${valid ? '' : ' invalid'}`;
+    resultEl.textContent = valid ? `✓ 有效信息，建议归入：${currentQ.points[Number(verdict.point)]?.name || '第' + (Number(verdict.point) + 1) + '点'}。${verdict.reason || ''}` : `不作为采分事实：${verdict.reason || '与本题采分点对应关系不足'}`;
+    if (valid) {
+      // 重渲染会整体重建 #sumSegs，先保存已选索引，渲染后连同新切片一并恢复
+      const prevSelected = new Set(sumSelectedSlices());
+      currentQ.slices.push({text, punct:'', valid:true, point:Number(verdict.point), reason:verdict.reason || '', free:true});
+      prevSelected.add(currentQ.slices.length - 1);
+      renderSummarySlices();
+      $$('#sumSegs .sum-seg').forEach(s => { if (prevSelected.has(Number(s.dataset.i))) s.classList.add('selected'); });
+      $('#sumSelCount').textContent = String(sumSelectedSlices().length);
+      _freeSelectionText = '';
+      $('#freeSelectPreview').textContent = '已加入找点结果，可继续拖选';
+      btn.disabled = true;
+      window.getSelection()?.removeAllRanges();
+    }
+  } catch (e) {
+    resultEl.className = 'free-select-result invalid';
+    resultEl.textContent = `判断失败：${e.message || '请稍后重试'}`;
+  } finally {
+    btn.textContent = 'AI 判断选中内容';
+    btn.disabled = !_freeSelectionText;
+  }
+}
 
 // ── Render groups (step 2) ──
 function renderSumGroups() {
@@ -5313,7 +5395,8 @@ function renderSummaryQuestion(q) {
     $('#btnSubmit').disabled = true;
     return showToast('题库未备，请刷新页面');
   }
-  currentQ = q;
+  currentQ = { ...q, slices: (q.slices || []).map(sl => ({ ...sl })) };
+  q = currentQ;
   const aiQuestion = q.sourceType === 'AI生成训练材料（非离线来源原文）';
   // 仿真题干：概括角度随 q.type 变化，学习者据此明确任务目标
   const STEM_ACTION = { '做法': '概括资料中反映的主要做法', '问题': '概括资料中反映的主要问题', '成效': '概括资料中反映的主要成效', '变化': '概括资料中反映的主要变化', '经验': '概括资料中反映的主要经验' };
@@ -5329,13 +5412,13 @@ function renderSummaryQuestion(q) {
   if (q.sourceDate) srcHtml += ` · ${esc(q.sourceDate)}`;
   $('#summarySource').innerHTML = srcHtml;
   // Render clickable slices
-  $('#sumSegs').innerHTML = q.slices.map((sl, i) =>
-    `<span class="sum-seg" data-i="${i}">${esc(sl.text)}${esc(sl.punct)}</span>`).join('');
+  renderSummarySlices();
   // Peek material
   const peekText = q.material;
   $('#sumPeekMat').textContent = peekText;
   $('#sumPeekMat2').textContent = peekText;
   // Reset state
+  _freeSelectionText = '';
   $('#sumSelCount').textContent = '0';
   $('#sumGroupCount').value = '';
   $('#sumGroups').innerHTML = '<p class="material-brief">先在上方填写要点数量。</p>';
@@ -5350,6 +5433,7 @@ function renderSummaryQuestion(q) {
   $('#compareMode').classList.add('hidden');
   $('#btnSkip').classList.remove('hidden');
   $('#btnRewriteSkip').classList.add('hidden');
+  updateFreeSelectTools();
   $('#summaryVol').textContent = `今日第 ${todayVolNo()} 题`;
   updateCharCount();
   sumGoStep(0);
@@ -7667,6 +7751,8 @@ function initApp() {
     if (!(await confirmDiscardIfDraft())) return;
     _questionLoadingPrevMode = getTrainingMode();
     setTrainingMode(b.dataset.training);
+    // 切换未引发在途生成（概括模式/缓存命中/离线）：立即回收，杜绝残留
+    if (!_questionGenerating) _questionLoadingPrevMode = null;
   }));
   $('#btnCancelQuestion').addEventListener('click', cancelQuestionGeneration);
 
@@ -7686,6 +7772,18 @@ function initApp() {
     seg.classList.toggle('selected');
     $('#sumSelCount').textContent = String($$('#sumSegs .sum-seg.selected').length);
   });
+  $('#summaryMaterial').addEventListener('mouseup', () => {
+    if (D.settings.mode !== 'online' || !getApiConfig()) return;
+    const selection = window.getSelection();
+    const text = selection ? selection.toString().replace(/\s+/g, ' ').trim() : '';
+    if (!text) return;
+    const range = selection.rangeCount ? selection.getRangeAt(0) : null;
+    if (!range || !$('#summaryMaterial').contains(range.commonAncestorContainer)) return;
+    _freeSelectionText = text;
+    $('#freeSelectResult').textContent = '';
+    updateFreeSelectTools();
+  });
+  $('#btnFreeSelectJudge').addEventListener('click', judgeFreeSelection);
   $('#sumBtnNext').addEventListener('click', () => {
     if (_sumStep === 1 && !sumSelectedSlices().length) { showToast('请先点选支撑答案的有效信息'); return; }
     if (_sumStep === 2 && !parseInt($('#sumGroupCount').value, 10)) { showToast('请先填写采分点数量'); return; }

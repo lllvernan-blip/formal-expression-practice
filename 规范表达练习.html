@@ -192,9 +192,11 @@ a { color: var(--dai); }
   position:relative; display:flex; gap:28px;
   border-bottom:1px solid var(--line);
   margin-bottom:30px;
+  overflow-x:auto; scrollbar-width:none;
 }
+#mainNav::-webkit-scrollbar { display:none; }
 .nav-btn {
-  background:none; border:none; padding:10px 2px 12px;
+  flex:none; background:none; border:none; padding:10px 2px 12px;
   font-family:var(--font-serif); font-size:15.5px; font-weight:600; letter-spacing:.22em;
   color:var(--muted); transition:color var(--t-fast); position:relative;
 }
@@ -353,6 +355,12 @@ select:hover { border-color:var(--line-strong); }
 .free-select-preview:empty { display:none; }
 .free-select-result { flex-basis:100%; color:var(--dai-deep); line-height:1.6; }
 .free-select-result.invalid { color:var(--zhu); }
+.free-select-panel { margin-top:10px; }
+.free-select-material { font-family:var(--font-serif); font-size:16px; line-height:2.3; text-align:justify; border-left:3px solid var(--zhu); padding:4px 4px 4px 16px; user-select:text; }
+.free-select-selected { margin-top:12px; display:grid; gap:6px; }
+.free-selected-seg { cursor:pointer; padding:7px 9px; border-left:3px solid var(--gold); background:var(--hi); color:#5a3a10; line-height:1.6; }
+.free-selected-seg:hover { opacity:.82; }
+[data-theme="dark"] .free-selected-seg { color:var(--gold); }
 /* 找点：可点选切片 */
 .sum-segs { font-family:var(--font-serif); font-size:16px; line-height:2.3; text-align:justify; border-left:3px solid var(--zhu); padding:4px 4px 4px 16px; }
 .sum-seg { cursor:pointer; border-radius:2px; padding:1px 1px; transition:background .13s, color .13s; -webkit-box-decoration-break:clone; box-decoration-break:clone; border-bottom:1.5px dotted var(--line-strong); }
@@ -420,7 +428,30 @@ select:hover { border-color:var(--line-strong); }
 .nt-note { color:var(--zhu); font-style:normal; font-size:10.5px; }
 /* 移动端安全 */
 @media (max-width:639px) {
+  #topbar { padding-top:10px; }
+  #topbar .topbar-right { gap:6px; }
+  #topbar .chip { max-width:104px; overflow:hidden; text-overflow:ellipsis; }
+  #mainNav { gap:14px; margin-bottom:18px; }
+  .nav-btn { min-height:42px; padding-left:5px; padding-right:5px; }
+  .tip-bar { margin-bottom:8px; padding:8px 9px 8px 11px; line-height:1.6; }
+  .tip-bar .tip-msg { min-width:0; }
+  .practice-toolbar { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:9px 10px; margin-bottom:12px; }
+  .mode-bar { grid-column:1 / -1; justify-content:space-between; gap:8px; padding:0; }
+  .mode-switch { flex:1; display:flex; }
+  .mode-switch .seg-btn { flex:1; padding-left:8px; padding-right:8px; }
+  .filter-bar__tools { width:auto; min-width:0; flex-wrap:nowrap; gap:7px; }
+  .filter-bar__tools .select-wrap { flex:1; min-width:0; }
+  .filter-bar__tools select { width:100%; min-width:0; padding-left:9px; padding-right:23px; font-size:12px; }
+  #difficultyGroup .seg-btn { padding-left:8px; padding-right:8px; }
+  .toolbar-skip { width:auto; align-self:stretch; }
+  .toolbar-skip .btn { height:100%; padding-left:10px; padding-right:10px; }
+  .sum-wiz-bar { overflow-x:auto; justify-content:flex-start; scrollbar-width:none; }
+  .sum-wiz-bar::-webkit-scrollbar { display:none; }
+  .swb-item { flex:0 0 auto; min-width:74px; white-space:nowrap; }
   .sum-segs { font-size:15px; line-height:2.0; }
+  .free-select-material { font-size:15px; line-height:2.0; padding-left:13px; }
+  .free-select-tools.visible { align-items:stretch; }
+  .free-select-tools .btn { flex:none; }
   .chain-row { flex-direction:column; }
   .nt-row { grid-template-columns:1fr; }
   .sum-nav { gap:6px; }
@@ -560,6 +591,7 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
 .mode-bar-label {
   font-family:var(--font-sans); font-size:12px; color:var(--muted); letter-spacing:.16em; flex:none;
 }
+.mode-switch { box-shadow:0 1px 0 var(--ink-08); }
 .mode-switch .seg-btn {
   padding:6px 16px; font-size:13.5px; font-family:var(--font-serif); letter-spacing:.1em;
 }
@@ -1157,7 +1189,7 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
   .brand-name { font-size:17px; }
   .session-count { display:none; }
   .chip { padding:2px 8px; }
-  #mainNav { gap:22px; margin-bottom:22px; }
+  #mainNav { gap:14px; margin-bottom:18px; }
   .nav-btn { font-size:14.5px; letter-spacing:.16em; }
   .oral { font-size:17px; line-height:1.95; padding-left:18px; }
   .verdict-grid { grid-template-columns:1fr; }
@@ -1173,13 +1205,17 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
   .hist-domain { display:none; }
   .action-row { flex-wrap:wrap; }
 
-  /* 答题卡：留白收窄、隐藏密封线、卡头折行 */
-  .practice-toolbar { margin-bottom:10px; grid-template-columns:auto; row-gap:8px; }
-  .mode-bar { justify-content:flex-start; gap:8px; padding:4px 0; }
+  /* 答题卡：模式独占一行，筛选和换题保持同一操作带 */
+  .practice-toolbar { margin-bottom:12px; grid-template-columns:1fr; row-gap:9px; }
+  .mode-bar { grid-column:1; justify-content:space-between; gap:8px; padding:0; }
   .mode-bar-label { font-size:11px; letter-spacing:.12em; }
-  .filter-bar__tools { justify-content:flex-start; flex-wrap:wrap; }
-  .toolbar-skip { width:100%; }
-  .toolbar-skip .btn { flex:1; }
+  .filter-bar__tools { width:100%; min-width:0; justify-content:flex-start; flex-wrap:nowrap; gap:7px; }
+  .filter-bar__tools .select-wrap { flex:1; min-width:0; }
+  .filter-bar__tools select { width:100%; min-width:0; font-size:12px; }
+  #difficultyGroup .seg-btn { padding-left:8px; padding-right:8px; }
+  .toolbar-skip { width:100%; align-self:stretch; }
+  .toolbar-skip .btn { width:100%; height:38px; padding-left:10px; padding-right:10px; }
+  .kbd-hint { display:none; }
   .card-head { padding:2px 0 10px; }
   .card-foot { flex-wrap:wrap; gap:10px; }
   .card-foot .btn { flex:1; white-space:nowrap; }
@@ -1575,11 +1611,6 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
                 <div class="sum-stem" id="sumStem"></div>
                 <div class="meta-context" id="summaryContext"></div>
                 <blockquote class="oral summary-material" id="summaryMaterial"></blockquote>
-                <div id="freeSelectTools" class="free-select-tools" aria-live="polite">
-                  <span class="free-select-preview" id="freeSelectPreview"></span>
-                  <button id="btnFreeSelectJudge" class="btn btn-line btn-sm" type="button" disabled>AI 判断选中内容</button>
-                  <span id="freeSelectResult" class="free-select-result"></span>
-                </div>
                 <div class="sum-source" id="summarySource"></div>
               </div>
             </div>
@@ -1587,6 +1618,16 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
             <div class="sum-panel hidden" data-p="1">
               <div class="sum-step-head"><span class="summary-step-no">01</span><span>圈出支撑答案的事实</span><span class="step-hint">排除背景、例子和修辞性描述</span></div>
               <div class="sum-segs" id="sumSegs"></div>
+              <div id="freeSelectPanel" class="free-select-panel hidden">
+                <div class="step-hint">在线模式：在连续材料中自由拖选，再交给 AI 判断</div>
+                <blockquote class="free-select-material" id="freeSelectMaterial"></blockquote>
+                <div id="freeSelectTools" class="free-select-tools" aria-live="polite">
+                  <span class="free-select-preview" id="freeSelectPreview"></span>
+                  <button id="btnFreeSelectJudge" class="btn btn-line btn-sm" type="button" disabled>AI 判断选中内容</button>
+                  <span id="freeSelectResult" class="free-select-result"></span>
+                </div>
+                <div id="freeSelectSelected" class="free-select-selected"></div>
+              </div>
               <div class="sum-sel-info">已选 <b id="sumSelCount">0</b> 处</div>
             </div>
             <!-- Panel 2: 归类·命名 -->
@@ -5290,22 +5331,38 @@ function sumGoStep(n) {
   if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// ── Slice selection ──
+// ── Slice / free selection ──
 let _freeSelectionText = '';
-function sumSelectedSlices() { return $$('#sumSegs .sum-seg.selected').map(s => Number(s.dataset.i)); }
+function isFreeSelectMode() { return D.settings.mode === 'online' && !!getApiConfig(); }
+function sumSelectedSlices() {
+  const selector = isFreeSelectMode() ? '#freeSelectSelected .free-selected-seg.selected' : '#sumSegs .sum-seg.selected';
+  return $$(selector).map(s => Number(s.dataset.i));
+}
 function renderSummarySlices() {
   const q = currentQ;
+  const useFreeSelect = isFreeSelectMode();
+  $('#sumSegs').classList.toggle('hidden', useFreeSelect);
   $('#sumSegs').innerHTML = q.slices.map((sl, i) =>
-    `<span class="sum-seg${sl.free ? ' free-seg' : ''}" data-i="${i}">${esc(sl.text)}${esc(sl.punct || '')}</span>`).join('');
+    `<span class="sum-seg" data-i="${i}">${esc(sl.text)}${esc(sl.punct || '')}</span>`).join('');
+}
+function renderFreeSelectedSlices(selected = null) {
+  const box = $('#freeSelectSelected');
+  if (!box || !currentQ) return;
+  const active = selected || new Set(sumSelectedSlices());
+  box.innerHTML = currentQ.slices.map((sl, i) => sl.free
+    ? `<span class="free-selected-seg${active.has(i) ? ' selected' : ''}" data-i="${i}">已选：${esc(sl.text)}</span>`
+    : '').join('');
 }
 function updateFreeSelectTools() {
+  const free = isFreeSelectMode();
+  const panel = $('#freeSelectPanel');
   const tools = $('#freeSelectTools');
-  if (!tools) return;
-  const enabled = D.settings.mode === 'online' && !!getApiConfig();
-  tools.classList.toggle('visible', enabled);
-  $('#freeSelectPreview').textContent = _freeSelectionText ? `已选：${_freeSelectionText}` : '在线模式可直接拖选材料中的任意连续文字';
-  $('#btnFreeSelectJudge').disabled = !enabled || !_freeSelectionText;
-  if (!enabled) $('#freeSelectResult').textContent = '';
+  if (!panel || !tools) return;
+  panel.classList.toggle('hidden', !free);
+  tools.classList.toggle('visible', free);
+  $('#freeSelectPreview').textContent = _freeSelectionText ? `已选：${_freeSelectionText}` : '拖选材料中的任意连续文字';
+  $('#btnFreeSelectJudge').disabled = !free || !_freeSelectionText;
+  if (!free) $('#freeSelectResult').textContent = '';
 }
 async function judgeFreeSelection() {
   const text = _freeSelectionText.trim();
@@ -5323,12 +5380,10 @@ async function judgeFreeSelection() {
     resultEl.className = `free-select-result${valid ? '' : ' invalid'}`;
     resultEl.textContent = valid ? `✓ 有效信息，建议归入：${currentQ.points[Number(verdict.point)]?.name || '第' + (Number(verdict.point) + 1) + '点'}。${verdict.reason || ''}` : `不作为采分事实：${verdict.reason || '与本题采分点对应关系不足'}`;
     if (valid) {
-      // 重渲染会整体重建 #sumSegs，先保存已选索引，渲染后连同新切片一并恢复
-      const prevSelected = new Set(sumSelectedSlices());
+      const selected = new Set(sumSelectedSlices());
       currentQ.slices.push({text, punct:'', valid:true, point:Number(verdict.point), reason:verdict.reason || '', free:true});
-      prevSelected.add(currentQ.slices.length - 1);
-      renderSummarySlices();
-      $$('#sumSegs .sum-seg').forEach(s => { if (prevSelected.has(Number(s.dataset.i))) s.classList.add('selected'); });
+      selected.add(currentQ.slices.length - 1);
+      renderFreeSelectedSlices(selected);
       $('#sumSelCount').textContent = String(sumSelectedSlices().length);
       _freeSelectionText = '';
       $('#freeSelectPreview').textContent = '已加入找点结果，可继续拖选';
@@ -5406,6 +5461,7 @@ function renderSummaryQuestion(q) {
   $('#summaryLevel').textContent = q.level;
   $('#summaryContext').textContent = q.context;
   $('#summaryMaterial').textContent = q.material;
+  $('#freeSelectMaterial').textContent = q.material;
   // Source line
   let srcHtml = `来源：${esc(q.source)}`;
   if (q.sourceUrl) srcHtml += ` · <a href="${esc(q.sourceUrl)}" target="_blank" rel="noopener">原文链接</a>`;
@@ -5419,6 +5475,7 @@ function renderSummaryQuestion(q) {
   $('#sumPeekMat2').textContent = peekText;
   // Reset state
   _freeSelectionText = '';
+  $('#freeSelectSelected').innerHTML = '';
   $('#sumSelCount').textContent = '0';
   $('#sumGroupCount').value = '';
   $('#sumGroups').innerHTML = '<p class="material-brief">先在上方填写要点数量。</p>';
@@ -5434,6 +5491,7 @@ function renderSummaryQuestion(q) {
   $('#btnSkip').classList.remove('hidden');
   $('#btnRewriteSkip').classList.add('hidden');
   updateFreeSelectTools();
+  renderFreeSelectedSlices(new Set());
   $('#summaryVol').textContent = `今日第 ${todayVolNo()} 题`;
   updateCharCount();
   sumGoStep(0);
@@ -7767,18 +7825,25 @@ function initApp() {
 
   // Summary wizard navigation
   $('#sumSegs').addEventListener('click', e => {
+    if (isFreeSelectMode()) return;
     const seg = e.target.closest('.sum-seg');
     if (!seg) return;
     seg.classList.toggle('selected');
-    $('#sumSelCount').textContent = String($$('#sumSegs .sum-seg.selected').length);
+    $('#sumSelCount').textContent = String(sumSelectedSlices().length);
   });
-  $('#summaryMaterial').addEventListener('mouseup', () => {
-    if (D.settings.mode !== 'online' || !getApiConfig()) return;
+  $('#freeSelectSelected').addEventListener('click', e => {
+    const seg = e.target.closest('.free-selected-seg');
+    if (!seg) return;
+    seg.classList.toggle('selected');
+    $('#sumSelCount').textContent = String(sumSelectedSlices().length);
+  });
+  $('#freeSelectMaterial').addEventListener('mouseup', () => {
+    if (!isFreeSelectMode()) return;
     const selection = window.getSelection();
     const text = selection ? selection.toString().replace(/\s+/g, ' ').trim() : '';
     if (!text) return;
     const range = selection.rangeCount ? selection.getRangeAt(0) : null;
-    if (!range || !$('#summaryMaterial').contains(range.commonAncestorContainer)) return;
+    if (!range || !$('#freeSelectMaterial').contains(range.commonAncestorContainer)) return;
     _freeSelectionText = text;
     $('#freeSelectResult').textContent = '';
     updateFreeSelectTools();

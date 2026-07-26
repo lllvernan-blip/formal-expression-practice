@@ -124,10 +124,10 @@ function validate(arr) {
       });
     }
 
-    // 2. 材料长度 200-350（提示）
+    // 2. 材料长度 300-600（提示）：按当前叙事型训练材料的实际长度设定
     if (typeof q.material === "string") {
       const mlen = q.material.length;
-      if (mlen < 200 || mlen > 350) warnings.push(`[${id}] 材料长度 ${mlen} 超出 200-350 区间`);
+      if (mlen < 300 || mlen > 600) warnings.push(`[${id}] 材料长度 ${mlen} 超出 300-600 区间`);
     }
 
     // 3. 切片 point 索引与有效性
@@ -143,19 +143,19 @@ function validate(arr) {
         if (!s.valid && !s.reason) errors.push(`[${id}] 切片 ${si} 标记无效却缺少 reason 说明`);
       });
 
-      // 5. 切片数量 8-12（提示）
+      // 5. 切片数量 8-14（提示）：叙事材料允许保留更多语义片段
       const sc = q.slices.length;
-      if (sc < 8 || sc > 12) warnings.push(`[${id}] 切片数量 ${sc} 超出 8-12 区间`);
+      if (sc < 8 || sc > 14) warnings.push(`[${id}] 切片数量 ${sc} 超出 8-14 区间`);
 
-      // 6. 干扰项数量 2-3（提示）
+      // 6. 干扰项数量 1-3（提示）：材料紧凑时允许只有一个干扰项
       const invalidCount = q.slices.filter(s => !s.valid).length;
-      if (invalidCount < 2 || invalidCount > 3) warnings.push(`[${id}] 干扰项数量 ${invalidCount} 超出 2-3 区间`);
+      if (invalidCount < 1 || invalidCount > 3) warnings.push(`[${id}] 干扰项数量 ${invalidCount} 超出 1-3 区间`);
     }
 
-    // 4. 参考答案长度 30-60（提示）
+    // 4. 参考答案长度 60-320（提示）：答案保留总括句、概括词和具体事实
     if (typeof q.ref === "string") {
       const rlen = q.ref.length;
-      if (rlen < 30 || rlen > 60) warnings.push(`[${id}] 参考答案长度 ${rlen} 超出 30-60 区间`);
+      if (rlen < 60 || rlen > 320) warnings.push(`[${id}] 参考答案长度 ${rlen} 超出 60-320 区间`);
     }
 
     // 7. 要点数量 3-4（提示）

@@ -1,5 +1,8 @@
 _backups/
-_dev/
+_dev/*
+!_dev/
+!_dev/check.js
+!_dev/_validate.js
 .workbuddy/
 .qoder/
 .cola-task.md

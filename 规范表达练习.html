@@ -5312,6 +5312,8 @@ function renderWrongBookBadge() {
 
 // ── Wizard navigation ──
 function sumGoStep(n) {
+  // 离开当前步骤即使稍后返回，也不能让旧的 AI 判断结果重新写回界面。
+  _freeJudgeRequestId++;
   _sumStep = n;
   $$('#summaryMode .sum-panel').forEach(p => p.classList.toggle('hidden', Number(p.dataset.p) !== n));
   $$('#sumWizBar .swb-item').forEach(s => {
@@ -5333,6 +5335,7 @@ function sumGoStep(n) {
 
 // ── Slice / free selection ──
 let _freeSelectionText = '';
+let _freeJudgeRequestId = 0;
 function isFreeSelectMode() {
   // 找点方式由题目难度决定：L1/L2 预切片，L3 在线且配置 API 后才允许自由划选。
   return currentQ?.level === 'L3' && D.settings.mode === 'online' && !!getApiConfig();
@@ -5371,22 +5374,31 @@ async function judgeFreeSelection() {
   // AI 只核验学习者主动划选的文字，不参与通读阶段，也不主动给出答案。
   if (_sumStep !== 1 || !isFreeSelectMode()) return;
   const text = _freeSelectionText.trim();
-  if (!text || !currentQ) return;
+  const requestQuestion = currentQ;
+  const requestStep = _sumStep;
+  const requestId = ++_freeJudgeRequestId;
+  if (!text || !requestQuestion) return;
+  const isRequestCurrent = () => requestId === _freeJudgeRequestId
+    && currentQ === requestQuestion
+    && _sumStep === requestStep
+    && _sumStep === 1
+    && isFreeSelectMode();
   const btn = $('#btnFreeSelectJudge');
   const resultEl = $('#freeSelectResult');
   btn.disabled = true; btn.textContent = 'AI 判断中…';
   resultEl.className = 'free-select-result'; resultEl.textContent = '正在判断这段文字是否构成可采事实…';
   try {
-    const prompt = `题目：${currentQ.prompt || ''}\n题型：${currentQ.type || ''}\n采分点：${(currentQ.points || []).map((p, i) => `${i}：${p.name || ''}`).join('；')}\n材料中用户自由选中的文字：${text}\n\n请判断这段文字是否是支撑本题答案的有效事实。只能根据原文，不得补造。返回严格 JSON：{"valid":true或false,"point":有效时对应的采分点索引，否则为-1,"reason":"简短中文理由"}`;
+    const prompt = `题目：${requestQuestion.prompt || ''}\n题型：${requestQuestion.type || ''}\n采分点：${(requestQuestion.points || []).map((p, i) => `${i}：${p.name || ''}`).join('；')}\n材料中用户自由选中的文字：${text}\n\n请判断这段文字是否是支撑本题答案的有效事实。只能根据原文，不得补造。返回严格 JSON：{"valid":true或false,"point":有效时对应的采分点索引，否则为-1,"reason":"简短中文理由"}`;
     const raw = await callAI([{role:'system',content:AI_SYSTEM_BASE + ' 你是申论材料找点审阅者。只返回 JSON，所有说明使用简体中文。'}, {role:'user',content:prompt}], true);
+    if (!isRequestCurrent()) return;
     const verdict = parseJSON(raw);
     const pointIndex = Number(verdict.point);
-    const valid = verdict.valid === true && Number.isInteger(pointIndex) && pointIndex >= 0 && pointIndex < (currentQ.points || []).length;
+    const valid = verdict.valid === true && Number.isInteger(pointIndex) && pointIndex >= 0 && pointIndex < (requestQuestion.points || []).length;
     resultEl.className = `free-select-result${valid ? '' : ' invalid'}`;
-    resultEl.textContent = valid ? `✓ 有效信息，建议归入：${currentQ.points[Number(verdict.point)]?.name || '第' + (Number(verdict.point) + 1) + '点'}。${verdict.reason || ''}` : `不作为采分事实：${verdict.reason || '与本题采分点对应关系不足'}`;
+    resultEl.textContent = valid ? `✓ 有效信息，建议归入：${requestQuestion.points[pointIndex]?.name || '第' + (pointIndex + 1) + '点'}。${verdict.reason || ''}` : `不作为采分事实：${verdict.reason || '与本题采分点对应关系不足'}`;
     if (valid) {
       const selected = new Set(sumSelectedSlices());
-      currentQ.slices.push({text, punct:'', valid:true, point:Number(verdict.point), reason:verdict.reason || '', free:true});
+      requestQuestion.slices.push({text, punct:'', valid:true, point:pointIndex, reason:verdict.reason || '', free:true});
       selected.add(currentQ.slices.length - 1);
       renderFreeSelectedSlices(selected);
       $('#sumSelCount').textContent = String(sumSelectedSlices().length);
@@ -5396,11 +5408,14 @@ async function judgeFreeSelection() {
       window.getSelection()?.removeAllRanges();
     }
   } catch (e) {
+    if (!isRequestCurrent()) return;
     resultEl.className = 'free-select-result invalid';
     resultEl.textContent = `判断失败：${e.message || '请稍后重试'}`;
   } finally {
-    btn.textContent = 'AI 判断选中内容';
-    btn.disabled = !_freeSelectionText;
+    if (isRequestCurrent()) {
+      btn.textContent = 'AI 判断选中内容';
+      btn.disabled = !_freeSelectionText;
+    }
   }
 }
 

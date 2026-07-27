@@ -1619,7 +1619,7 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
               <div class="sum-step-head"><span class="summary-step-no">01</span><span>圈出支撑答案的事实</span><span class="step-hint">排除背景、例子和修辞性描述</span></div>
               <div class="sum-segs" id="sumSegs"></div>
               <div id="freeSelectPanel" class="free-select-panel hidden">
-                <div class="step-hint">在线模式：在连续材料中自由拖选，再交给 AI 判断</div>
+                <div class="step-hint">高难度：先在连续材料中自由划选；只有点击下方按钮后，才交给 AI 判断</div>
                 <blockquote class="free-select-material" id="freeSelectMaterial"></blockquote>
                 <div id="freeSelectTools" class="free-select-tools" aria-live="polite">
                   <span class="free-select-preview" id="freeSelectPreview"></span>
@@ -5333,7 +5333,10 @@ function sumGoStep(n) {
 
 // ── Slice / free selection ──
 let _freeSelectionText = '';
-function isFreeSelectMode() { return D.settings.mode === 'online' && !!getApiConfig(); }
+function isFreeSelectMode() {
+  // 找点方式由题目难度决定：L1/L2 预切片，L3 在线且配置 API 后才允许自由划选。
+  return currentQ?.level === 'L3' && D.settings.mode === 'online' && !!getApiConfig();
+}
 function sumSelectedSlices() {
   const selector = isFreeSelectMode() ? '#freeSelectSelected .free-selected-seg.selected' : '#sumSegs .sum-seg.selected';
   return $$(selector).map(s => Number(s.dataset.i));
@@ -5365,6 +5368,8 @@ function updateFreeSelectTools() {
   if (!free) $('#freeSelectResult').textContent = '';
 }
 async function judgeFreeSelection() {
+  // AI 只核验学习者主动划选的文字，不参与通读阶段，也不主动给出答案。
+  if (_sumStep !== 1 || !isFreeSelectMode()) return;
   const text = _freeSelectionText.trim();
   if (!text || !currentQ) return;
   const btn = $('#btnFreeSelectJudge');

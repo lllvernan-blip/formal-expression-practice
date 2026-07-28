@@ -366,6 +366,13 @@ select:hover { border-color:var(--line-strong); }
 .free-select-popover .selection-action.accept { color:#2f6b4f; background:rgba(47,107,79,.1); }
 .free-select-popover .selection-action.cancel { color:var(--zhu); background:rgba(176,58,40,.1); }
 .free-select-popover .selection-action:hover { filter:brightness(.92); }
+.selection-drag-card { display:grid; gap:3px; min-width:150px; max-width:min(280px, calc(100vw - 100px)); padding:7px 9px; border:1px solid var(--line-strong); border-radius:3px; background:var(--paper-2); color:var(--ink-soft); cursor:grab; user-select:none; touch-action:none; }
+.selection-drag-card:active, .selection-drag-card.dragging { cursor:grabbing; }
+.selection-drag-card strong { font:700 11px/1.3 var(--font-sans); color:var(--zhu); }
+.selection-drag-card span { max-height:3.2em; overflow:hidden; font:12px/1.6 var(--font-sans); }
+.free-select-dropzone { display:none; position:fixed; z-index:44; left:50%; bottom:14px; transform:translateX(-50%); width:min(440px, calc(100vw - 24px)); padding:10px 14px; border:1px dashed var(--zhu); border-radius:4px; background:var(--paper-2); box-shadow:var(--shadow-rise); color:var(--zhu); text-align:center; font:700 12px/1.4 var(--font-sans); }
+.free-select-dropzone.visible { display:block; }
+.free-select-dropzone.drag-over { background:var(--zhu); color:#fff; }
 .free-select-panel { margin-top:10px; }
 .free-select-material { display:none; }
 .summary-material.free-select-source { user-select:text; -webkit-user-select:text; touch-action:manipulation; cursor:text; }
@@ -462,8 +469,9 @@ select:hover { border-color:var(--line-strong); }
   .swb-item { flex:0 0 auto; min-width:74px; white-space:nowrap; }
   .sum-segs { font-size:15px; line-height:2.0; }
   .free-select-material { font-size:15px; line-height:2.0; padding-left:13px; }
-  .free-select-tools.visible { align-items:stretch; }
-  .free-select-tools .btn { flex:none; }
+  .free-select-tools.visible { position:fixed; left:12px; right:12px; bottom:10px; z-index:40; margin:0; padding:9px 10px; align-items:stretch; background:var(--paper-2); box-shadow:var(--shadow-rise); }
+  .free-select-tools.visible .free-select-preview { max-height:2.8em; overflow:hidden; }
+  .free-select-tools .btn { flex:none; min-height:34px; }
   .chain-row { flex-direction:column; }
   .nt-row { grid-template-columns:1fr; }
   .sum-nav { gap:6px; }
@@ -1647,12 +1655,8 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
               <div class="sum-step-head"><span class="summary-step-no">01</span><span>圈出支撑答案的事实</span><span class="step-hint">排除背景、例子和修辞性描述</span></div>
               <div class="sum-segs" id="sumSegs"></div>
               <div id="freeSelectPanel" class="free-select-panel hidden">
-                <div class="step-hint">通读时可直接划选事实；选区附近出现操作条后，勾选加入练习，叉号放弃本次选区</div>
+                <div class="step-hint">通读材料可直接长按选字；选中后材料下方固定出现加入按钮，错题本先加入待复盘选段，再由你点击 AI 复盘</div>
                 <blockquote class="free-select-material" id="freeSelectMaterial"></blockquote>
-                <div id="freeSelectPopover" class="free-select-popover" role="dialog" aria-label="选区操作">
-                  <button id="btnFreeSelectAccept" class="selection-action accept" type="button" aria-label="加入练习选段" title="加入练习选段">✓</button>
-                  <button id="btnFreeSelectCancel" class="selection-action cancel" type="button" aria-label="放弃本次选区" title="放弃本次选区">×</button>
-                </div>
                 <div id="freeSelectTools" class="free-select-tools" aria-live="polite">
                   <span class="free-select-preview" id="freeSelectPreview"></span>
                   <button id="btnFreeSelectJudge" class="btn btn-line btn-sm" type="button" disabled>加入练习选段</button>
@@ -3586,12 +3590,16 @@ function pickSummaryQuestion(forceWrong) {
   let pool = SUMMARY_BANK.filter(q => type === '随机' || q.type === type);
   const exact = pool.filter(q => q.level === level);
   if (exact.length) pool = exact;
-  // 错题优先：60% 概率从错题本挑，或强制只挑错题
+  // AI 动态题不在 SUMMARY_BANK，错题本中的题目快照也要进入可选池。
   const wb = D.wrongBook || {};
-  const wrongPool = pool.filter(q => wb[q.id]);
-  if (wrongPool.length && (forceWrong || Math.random() < 0.6)) {
-    return wrongPool[Math.floor(Math.random() * wrongPool.length)];
-  }
+  const savedWrong = Object.entries(wb).map(([id, item]) => {
+    if (item.question) return item.question;
+    const record = [...(D.history || [])].reverse().find(h => String(h.question?.id) === String(id));
+    return record?.question || null;
+  }).filter(Boolean);
+  const wrongPool = savedWrong.filter(q => type === '随机' || q.type === type);
+  if (forceWrong) return wrongPool[Math.floor(Math.random() * wrongPool.length)];
+  if (wrongPool.length && Math.random() < 0.6) return wrongPool[Math.floor(Math.random() * wrongPool.length)];
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
@@ -3601,7 +3609,7 @@ let _sumStep = 0; // current wizard step
 let _appMode = 'practice'; // 'practice' | 'wrongBookReview'
 
 // ── 错题本 ──
-function updateWrongBook(qId, isWrong, reasons) {
+function updateWrongBook(qId, isWrong, reasons, question) {
   if (!D.wrongBook) D.wrongBook = {};
   if (isWrong) {
     const prev = D.wrongBook[qId];
@@ -3609,7 +3617,8 @@ function updateWrongBook(qId, isWrong, reasons) {
       addedAt: prev ? prev.addedAt : new Date().toISOString(),
       lastWrong: new Date().toISOString(),
       count: (prev ? prev.count : 0) + 1,
-      reasons: reasons
+      reasons: reasons,
+      question: question ? JSON.parse(JSON.stringify(question)) : (prev?.question || null)
     };
     showToast('✗ 已加入错题本');
   } else if (D.wrongBook[qId]) {
@@ -3666,6 +3675,7 @@ function sumGoStep(n) {
     s.classList.toggle('done', i < n);
   });
   // Show/hide nav buttons
+  updateFreeSelectTools();
   $('#sumBtnPrev').classList.toggle('hidden', n === 0);
   $('#sumBtnNext').classList.toggle('hidden', n === 3);
   $('#btnSubmit').classList.toggle('hidden', n !== 3);
@@ -3679,6 +3689,8 @@ function sumGoStep(n) {
 
 // ── Slice / free selection ──
 let _freeSelectionText = '';
+let _freeReviewPendingText = '';
+let _freeDragState = null;
 let _freeJudgeRequestId = 0;
 function isFreeSelectMode() {
   // 找点方式由题目难度决定：L1/L2 预切片，L3 在线且配置 API 后才允许自由划选。
@@ -3722,31 +3734,66 @@ function updateFreeSelectTools() {
   const panel = $('#freeSelectPanel');
   const tools = $('#freeSelectTools');
   if (!panel || !tools) return;
-  placeFreeSelectPanel();
+  placeFreeSelectPanel(free);
   panel.classList.toggle('hidden', !free);
-  tools.classList.toggle('visible', free);
   const review = free && isWrongBookReviewMode();
-  $('#freeSelectPreview').textContent = _freeSelectionText ? `已选：${_freeSelectionText}` : (review ? '拖选一段，复盘它为什么对或不对' : '通读时拖选事实，勾选后加入练习');
-  $('#btnFreeSelectJudge').classList.toggle('hidden', free && !review);
-  $('#btnFreeSelectJudge').textContent = review ? 'AI 判断复盘选段' : '加入练习选段';
-  $('#btnFreeSelectJudge').disabled = !free || !_freeSelectionText;
+  const pending = review ? (_freeReviewPendingText || _freeSelectionText) : _freeSelectionText;
+  tools.classList.toggle('visible', free && !!pending);
+  $('#freeSelectPreview').textContent = pending ? `${review && _freeReviewPendingText ? '待复盘' : '已选'}：${pending}` : (review ? '长按选字后，点击加入待复盘选段' : '通读时长按选字，再点击加入练习选段');
+  $('#btnFreeSelectJudge').classList.remove('hidden');
+  $('#btnFreeSelectJudge').textContent = review ? (_freeReviewPendingText ? 'AI 判断复盘选段' : '加入待复盘选段') : '加入练习选段';
+  $('#btnFreeSelectJudge').disabled = !free || (review ? (!_freeReviewPendingText && !_freeSelectionText) : !_freeSelectionText);
   if (!free) {
     $('#freeSelectResult').textContent = '';
     hideFreeSelectionPopover();
   }
 }
-function hideFreeSelectionPopover() {
-  const pop = $('#freeSelectPopover');
-  if (pop) pop.classList.remove('visible', 'below');
-}
+function hideFreeSelectionPopover() {}
 function isSelectionInMaterial() {
   const sel = window.getSelection();
   if (!sel || !sel.rangeCount) return false;
   const el = isFreeSelectMode() ? $('#summaryMaterial') : $('#freeSelectMaterial');
   return el && el.contains(sel.getRangeAt(0).commonAncestorContainer);
 }
+function beginFreeSelectionDrag(e) {
+  if (!_freeSelectionText || !isFreeSelectMode() || !isFreeSelectionStep()) return;
+  e.preventDefault();
+  const pop = null;
+  const zone = null;
+  if (!pop) return;
+  const rect = pop.getBoundingClientRect();
+  _freeDragState = { pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, left: rect.left, top: rect.top };
+  try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch (_) {}
+  pop.classList.add('dragging');
+  zone?.classList.add('visible');
+  const move = ev => {
+    if (!_freeDragState || ev.pointerId !== _freeDragState.pointerId) return;
+    ev.preventDefault();
+    const left = _freeDragState.left + ev.clientX - _freeDragState.startX;
+    const top = _freeDragState.top + ev.clientY - _freeDragState.startY;
+    pop.style.left = `${Math.max(8, Math.min(window.innerWidth - pop.offsetWidth - 8, left))}px`;
+    pop.style.top = `${Math.max(8, Math.min(window.innerHeight - pop.offsetHeight - 8, top))}px`;
+    const zr = zone?.getBoundingClientRect();
+    zone?.classList.toggle('drag-over', !!zr && ev.clientX >= zr.left && ev.clientX <= zr.right && ev.clientY >= zr.top && ev.clientY <= zr.bottom);
+  };
+  const end = ev => {
+    if (!_freeDragState || ev.pointerId !== _freeDragState.pointerId) return;
+    const zr = zone?.getBoundingClientRect();
+    const dropped = !!zr && ev.clientX >= zr.left && ev.clientX <= zr.right && ev.clientY >= zr.top && ev.clientY <= zr.bottom;
+    pop.classList.remove('dragging');
+    zone?.classList.remove('drag-over');
+    _freeDragState = null;
+    try { e.currentTarget.releasePointerCapture?.(ev.pointerId); } catch (_) {}
+    e.currentTarget.removeEventListener('pointermove', move);
+    if (dropped) addFreeSelection();
+    else showFreeSelectionPopover();
+  };
+  e.currentTarget.addEventListener('pointermove', move);
+  e.currentTarget.addEventListener('pointerup', end, { once: true });
+  e.currentTarget.addEventListener('pointercancel', end, { once: true });
+}
 function showFreeSelectionPopover() {
-  const pop = $('#freeSelectPopover');
+  const pop = null;
   const selection = window.getSelection();
   if (!pop || !selection || !selection.rangeCount || !_freeSelectionText || !isFreeSelectMode() || !isFreeSelectionStep()) {
     hideFreeSelectionPopover();
@@ -3756,6 +3803,7 @@ function showFreeSelectionPopover() {
   const range = selection.getRangeAt(0);
   const rect = range.getBoundingClientRect();
   if (!rect || (!rect.width && !rect.height)) return;
+  // Native selection remains the only visible selection affordance.
   const isMobile = window.innerWidth <= 600 || navigator.maxTouchPoints > 0;
   pop.classList.remove('below');
   pop.classList.add('visible');
@@ -3796,8 +3844,8 @@ function syncFreeSelectionFromWindow() {
   showFreeSelectionPopover();
 }
 async function judgeReviewSelection() {
-  if (!isFreeSelectionStep() || !isFreeSelectMode() || !isWrongBookReviewMode() || !_freeSelectionText.trim() || !currentQ) return;
-  const text = _freeSelectionText.trim();
+  if (!isFreeSelectionStep() || !isFreeSelectMode() || !isWrongBookReviewMode() || !_freeReviewPendingText.trim() || !currentQ) return;
+  const text = _freeReviewPendingText.trim();
   const requestQuestion = currentQ;
   const requestId = ++_freeJudgeRequestId;
   const isCurrent = () => requestId === _freeJudgeRequestId && currentQ === requestQuestion && isFreeSelectionStep() && isWrongBookReviewMode();
@@ -3816,6 +3864,7 @@ async function judgeReviewSelection() {
     const valid = verdict.valid === true && Number.isInteger(point) && point >= 0 && point < (requestQuestion.points || []).length;
     resultEl.className = `free-select-result${valid ? '' : ' invalid'}`;
     resultEl.textContent = `${valid ? '✓ 这段属于有效事实' : '✗ 这段不属于本题有效采分事实'}：${verdict.reason || 'AI 未给出具体理由'}${verdict.next ? ` 复盘建议：${verdict.next}` : ''}`;
+    _freeReviewPendingText = '';
     _freeSelectionText = '';
     window.getSelection()?.removeAllRanges();
     hideFreeSelectionPopover();
@@ -3823,12 +3872,21 @@ async function judgeReviewSelection() {
   } catch (e) {
     if (isCurrent()) { resultEl.className = 'free-select-result invalid'; resultEl.textContent = `复盘判断失败：${e.message || '请稍后重试'}`; }
   } finally {
-    if (isCurrent()) { btn.textContent = 'AI 判断复盘选段'; btn.disabled = !_freeSelectionText; }
+    if (isCurrent()) { btn.textContent = 'AI 判断复盘选段'; btn.disabled = !_freeReviewPendingText; }
   }
 }
 function addFreeSelection() {
   if (!isFreeSelectionStep() || !isFreeSelectMode() || !_freeSelectionText.trim() || !currentQ) return;
   const text = _freeSelectionText.trim();
+  if (isWrongBookReviewMode()) {
+    _freeReviewPendingText = text;
+    _freeSelectionText = '';
+    $('#freeSelectResult').textContent = '已加入待复盘选段，请点击下方“AI 判断复盘选段”。';
+    hideFreeSelectionPopover();
+    window.getSelection()?.removeAllRanges();
+    updateFreeSelectTools();
+    return;
+  }
   const existing = currentQ.slices.findIndex(s => s.free && s.text === text);
   if (existing >= 0) {
     const selected = new Set(sumSelectedSlices());
@@ -3896,10 +3954,12 @@ function renderSumRecap() {
 function readableMaterialHtml(text) {
   return String(text || '').trim().split(/\n\s*\n+/).filter(Boolean).map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('');
 }
-function placeFreeSelectPanel() {
-  const pop = $('#freeSelectPopover');
-  const host = $('#summaryMode');
-  if (pop && host && pop.parentElement !== host) host.appendChild(pop);
+function placeFreeSelectPanel(free = isFreeSelectMode()) {
+  const panel = $('#freeSelectPanel');
+  const materialCard = $('#summaryMode .sum-panel[data-p="0"] .card-material');
+  const stepPanel = $('#summaryMode .sum-panel[data-p="1"]');
+  const target = free && _sumStep === 0 ? materialCard : stepPanel;
+  if (panel && target && panel.parentElement !== target) target.appendChild(panel);
 }
 function renderSummaryQuestion(q) {
   if (!q) {
@@ -3943,6 +4003,7 @@ function renderSummaryQuestion(q) {
   $('#sumPeekMat2').textContent = peekText;
   // Reset state
   _freeSelectionText = '';
+  _freeReviewPendingText = '';
   $('#freeSelectSelected').innerHTML = '';
   $('#sumSelCount').textContent = '0';
   $('#sumGroupCount').value = '';
@@ -4151,7 +4212,7 @@ ${pointsDesc}
   updateWrongBook(q.id, aiWrong, aiWrong ? [
     hasMissing ? '漏点' : '',
     aiScore < 7 ? '综合分偏低(' + aiScore + ')' : ''
-  ].filter(Boolean) : []);
+  ].filter(Boolean) : [], q);
 
   // ── 画像更新（概括 AI 路径）──
   updateProfileFromResult(result);
@@ -6473,23 +6534,8 @@ function initApp() {
     if (isFreeSelectMode() && isFreeSelectionStep()) setTimeout(syncFreeSelectionFromWindow, 0);
   });
   $('#btnFreeSelectJudge').addEventListener('click', () => {
-    if (isWrongBookReviewMode()) judgeReviewSelection();
+    if (isWrongBookReviewMode() && _freeReviewPendingText) judgeReviewSelection();
     else addFreeSelection();
-  });
-  $('#btnFreeSelectAccept').addEventListener('click', () => {
-    if (isWrongBookReviewMode()) judgeReviewSelection();
-    else addFreeSelection();
-  });
-  $('#btnFreeSelectCancel').addEventListener('click', () => {
-    _freeSelectionText = '';
-    hideFreeSelectionPopover();
-    window.getSelection()?.removeAllRanges();
-    updateFreeSelectTools();
-  });
-  document.addEventListener('pointerdown', e => {
-    const pop = $('#freeSelectPopover');
-    const material = $('#summaryMaterial');
-    if (pop?.classList.contains('visible') && !pop.contains(e.target) && !material?.contains(e.target)) hideFreeSelectionPopover();
   });
   $('#sumBtnNext').addEventListener('click', () => {
     if (_sumStep === 1 && !sumSelectedSlices().length) { showToast('请先点选支撑答案的有效信息'); return; }

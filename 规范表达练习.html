@@ -77,6 +77,16 @@
 
   /* 格子稿纸统一规格：一处改，处处同 */
   --grid-cell: 26px;
+
+  --hi: rgba(143,112,49,.12);
+  --hi-text: #5a3a10;
+  --card: var(--paper-2);
+  --zhu-light: rgba(176,58,40,.12);
+  --line-soft: rgba(34,29,21,.08);
+  --gold-soft: rgba(143,112,49,.08);
+  --ink-04: rgba(34,29,21,.04);
+  --success: #5c7a4e;
+  --accept: #2f6b4f;
 }
 @media (min-width: 1024px) { :root { --grid-cell: 28px; } }
 @media (max-width: 639px)  { :root { --grid-cell: 24px; } }
@@ -112,6 +122,16 @@
   --shadow-paper: 0 1px 2px rgba(0,0,0,.3), 0 10px 26px -14px rgba(0,0,0,.5);
   --shadow-rise:  0 2px 6px rgba(0,0,0,.35), 0 24px 48px -18px rgba(0,0,0,.6);
   --grain-opacity: .35;
+
+  --hi: rgba(200,180,120,.15);
+  --hi-text: #d4c4a0;
+  --card: var(--paper-2);
+  --zhu-light: rgba(200,80,60,.18);
+  --line-soft: rgba(200,190,170,.1);
+  --gold-soft: rgba(200,180,120,.12);
+  --ink-04: rgba(200,190,170,.06);
+  --success: #7a9e6a;
+  --accept: #5a9e7a;
 }
 
 /* ============ 基底 ============ */
@@ -128,7 +148,7 @@ body {
   transition: background .4s ease, color .4s ease;
 }
 /* 面板离屏渲染跳过：隐藏面板不参与布局/绘制，切换时才渲染 */
-.panel { content-visibility:auto; contain-intrinsic-size:auto 600px; }
+.panel { content-visibility:auto; contain-intrinsic-size:auto 1200px; }
 .panel.hidden { content-visibility:hidden; }
 /* 宣纸纹理：两层极淡的噪点与纤维 */
 body::before {
@@ -175,7 +195,7 @@ a { color: var(--dai); }
 }
 #modeStatus { cursor:pointer; }
 .chip .dot { width:6px; height:6px; border-radius:50%; background:var(--muted); flex:none; }
-.chip.connected { color:var(--ink-soft); } .chip.connected .dot { background:#5c7a4e; }
+.chip.connected { color:var(--ink-soft); } .chip.connected .dot { background:var(--success); }
 .chip.warn { color:var(--gold); } .chip.warn .dot { background:var(--gold); }
 #fileStatus { cursor:pointer; transition:border-color var(--t-fast); }
 #fileStatus:hover { border-color:var(--line-strong); }
@@ -323,7 +343,8 @@ select:hover { border-color:var(--line-strong); }
 .seg-btn:last-child { border-right:none; }
 .seg-btn:hover { color:var(--ink); }
 .seg-btn.active { background:var(--ink); color:var(--paper); }
-.summary-material { font-size:17px; line-height:2; max-height:52vh; overflow:auto; padding-right:8px; }
+.summary-material { font-size:17px; line-height:2; max-height:32vh; overflow:auto; padding-right:8px; scrollbar-width:thin; scrollbar-color:var(--ink-15, rgba(34,29,21,.15)) transparent; }
+#drawer { scrollbar-width:thin; scrollbar-color:var(--ink-15, rgba(34,29,21,.15)) transparent; }
 .summary-material p, .free-select-material p { margin:0 0 1em; text-indent:2em; }
 .summary-material p:last-child, .free-select-material p:last-child { margin-bottom:0; }
 .material-brief { font-size:13px; color:var(--muted); letter-spacing:.05em; margin:-4px 0 2px; }
@@ -358,33 +379,18 @@ select:hover { border-color:var(--line-strong); }
 .free-select-preview:empty { display:none; }
 .free-select-result { flex-basis:100%; color:var(--dai-deep); line-height:1.6; }
 .free-select-result.invalid { color:var(--zhu); }
-.free-select-popover { position:fixed; z-index:45; display:none; align-items:center; gap:4px; padding:5px; border:1px solid var(--line-strong); border-radius:4px; background:var(--paper-2); box-shadow:var(--shadow-rise); }
-.free-select-popover.visible { display:flex; }
-.free-select-popover::after { content:''; position:absolute; left:-6px; top:14px; width:10px; height:10px; background:var(--paper-2); border-left:1px solid var(--line-strong); border-bottom:1px solid var(--line-strong); transform:rotate(45deg); }
-.free-select-popover.below::after { left:auto; right:14px; top:-6px; border-left:0; border-bottom:0; border-right:1px solid var(--line-strong); border-top:1px solid var(--line-strong); transform:rotate(45deg); }
-.free-select-popover .selection-action { position:relative; z-index:1; width:32px; height:30px; display:grid; place-items:center; padding:0; border:0; border-radius:3px; font:700 18px/1 var(--font-sans); cursor:pointer; }
-.free-select-popover .selection-action.accept { color:#2f6b4f; background:rgba(47,107,79,.1); }
-.free-select-popover .selection-action.cancel { color:var(--zhu); background:rgba(176,58,40,.1); }
-.free-select-popover .selection-action:hover { filter:brightness(.92); }
-.selection-drag-card { display:grid; gap:3px; min-width:150px; max-width:min(280px, calc(100vw - 100px)); padding:7px 9px; border:1px solid var(--line-strong); border-radius:3px; background:var(--paper-2); color:var(--ink-soft); cursor:grab; user-select:none; touch-action:none; }
-.selection-drag-card:active, .selection-drag-card.dragging { cursor:grabbing; }
-.selection-drag-card strong { font:700 11px/1.3 var(--font-sans); color:var(--zhu); }
-.selection-drag-card span { max-height:3.2em; overflow:hidden; font:12px/1.6 var(--font-sans); }
-.free-select-dropzone { display:none; position:fixed; z-index:44; left:50%; bottom:14px; transform:translateX(-50%); width:min(440px, calc(100vw - 24px)); padding:10px 14px; border:1px dashed var(--zhu); border-radius:4px; background:var(--paper-2); box-shadow:var(--shadow-rise); color:var(--zhu); text-align:center; font:700 12px/1.4 var(--font-sans); }
-.free-select-dropzone.visible { display:block; }
-.free-select-dropzone.drag-over { background:var(--zhu); color:#fff; }
 .free-select-panel { margin-top:10px; }
 .free-select-material { display:none; }
 .summary-material.free-select-source { user-select:text; -webkit-user-select:text; touch-action:manipulation; cursor:text; }
 .free-select-selected { margin-top:12px; display:grid; gap:6px; }
-.free-selected-seg { cursor:pointer; padding:7px 9px; border-left:3px solid var(--gold); background:var(--hi); color:#5a3a10; line-height:1.6; }
+.free-selected-seg { cursor:pointer; padding:7px 9px; border-left:3px solid var(--gold); background:var(--hi); color:var(--hi-text); line-height:1.6; }
 .free-selected-seg:hover { opacity:.82; }
 [data-theme="dark"] .free-selected-seg { color:var(--gold); }
 /* 找点：可点选切片 */
 .sum-segs { font-family:var(--font-serif); font-size:16px; line-height:2.3; text-align:justify; border-left:3px solid var(--zhu); padding:4px 4px 4px 16px; }
 .sum-seg { cursor:pointer; border-radius:2px; padding:1px 1px; transition:background .13s, color .13s; -webkit-box-decoration-break:clone; box-decoration-break:clone; border-bottom:1.5px dotted var(--line-strong); }
 .sum-seg:hover { background:var(--ink-08); }
-.sum-seg.selected { background:var(--hi); color:#5a3a10; border-bottom:1.5px solid var(--gold); }
+.sum-seg.selected { background:var(--hi); color:var(--hi-text); border-bottom:1.5px solid var(--gold); }
 [data-theme="dark"] .sum-seg.selected { color:var(--gold); }
 .sum-sel-info { margin-top:10px; font-size:13px; color:var(--muted); }
 .sum-sel-info b { color:var(--zhu); font-size:15px; }
@@ -433,7 +439,7 @@ select:hover { border-color:var(--line-strong); }
 .diag-item.miss { background:var(--zhu-soft); color:var(--zhu-deep); border-left:3px solid var(--zhu); }
 .diag-item.fact, .diag-item.len { background:var(--gold-soft); color:#7d5f1e; border-left:3px solid var(--gold); }
 .diag-item.good { background:var(--dai-soft); color:var(--dai); border-left:3px solid var(--dai); }
-.hl { background:var(--hi); color:#5a3a10; padding:1px 2px; border-radius:2px; }
+.hl { background:var(--hi); color:var(--hi-text); padding:1px 2px; border-radius:2px; }
 /* 折叠 */
 .more-wrap { margin-top:6px; }
 .more-toggle { background:none; border:none; color:var(--zhu); font-size:12px; cursor:pointer; padding:4px 0; letter-spacing:.04em; }
@@ -469,12 +475,13 @@ select:hover { border-color:var(--line-strong); }
   .swb-item { flex:0 0 auto; min-width:74px; white-space:nowrap; }
   .sum-segs { font-size:15px; line-height:2.0; }
   .free-select-material { font-size:15px; line-height:2.0; padding-left:13px; }
-  .free-select-tools.visible { position:fixed; left:12px; right:12px; bottom:10px; z-index:40; margin:0; padding:9px 10px; align-items:stretch; background:var(--paper-2); box-shadow:var(--shadow-rise); }
+  .free-select-tools.visible { position:relative; left:auto; right:auto; bottom:auto; z-index:auto; margin:0; padding:9px 10px; align-items:stretch; background:var(--paper-2); box-shadow:none; }
   .free-select-tools.visible .free-select-preview { max-height:2.8em; overflow:hidden; }
   .free-select-tools .btn { flex:none; min-height:34px; }
   .chain-row { flex-direction:column; }
   .nt-row { grid-template-columns:1fr; }
   .sum-nav { gap:6px; }
+  .summary-material { max-height:40vh; }
 }
 .layer-list { display:grid; gap:12px; margin:20px 0 4px; }
 .layer-item { border-left:3px solid var(--line-strong); padding:8px 12px; }
@@ -634,8 +641,8 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
 .card-head .q-meta { margin-bottom:0; gap:8px; justify-content:flex-start; }
 .meta-vol { font-family:var(--font-mono); font-size:11px; color:var(--muted); letter-spacing:.06em; white-space:nowrap; }
 .wrong-book-badge { display:inline-block; font-size:11px; padding:2px 8px; border-radius:3px; border:1px solid var(--line); background:transparent; color:var(--muted); cursor:pointer; margin-left:6px; transition:all .2s; }
-.wrong-book-badge.has-wrong { border-color:#c0392b; color:#c0392b; background:rgba(192,57,43,.06); }
-.wrong-book-badge.wrong-only { border-color:#c0392b; color:#fff; background:#c0392b; }
+.wrong-book-badge.has-wrong { border-color:var(--zhu); color:var(--zhu); background:rgba(176,58,40,.06); }
+.wrong-book-badge.wrong-only { border-color:var(--zhu); color:var(--paper); background:var(--zhu); }
 .nav-wrong-book { position:relative; }
 .nav-wrong-book b { display:none; position:absolute; top:4px; right:-5px; min-width:15px; height:15px; padding:0 3px; border-radius:8px; background:var(--zhu); color:#fff; font:10px/15px var(--font-sans); letter-spacing:0; }
 .nav-wrong-book.has-wrong b { display:inline-block; }
@@ -3690,7 +3697,6 @@ function sumGoStep(n) {
 // ── Slice / free selection ──
 let _freeSelectionText = '';
 let _freeReviewPendingText = '';
-let _freeDragState = null;
 let _freeJudgeRequestId = 0;
 function isFreeSelectMode() {
   // 找点方式由题目难度决定：L1/L2 预切片，L3 在线且配置 API 后才允许自由划选。
@@ -3745,103 +3751,28 @@ function updateFreeSelectTools() {
   $('#btnFreeSelectJudge').disabled = !free || (review ? (!_freeReviewPendingText && !_freeSelectionText) : !_freeSelectionText);
   if (!free) {
     $('#freeSelectResult').textContent = '';
-    hideFreeSelectionPopover();
   }
 }
-function hideFreeSelectionPopover() {}
 function isSelectionInMaterial() {
   const sel = window.getSelection();
   if (!sel || !sel.rangeCount) return false;
   const el = isFreeSelectMode() ? $('#summaryMaterial') : $('#freeSelectMaterial');
   return el && el.contains(sel.getRangeAt(0).commonAncestorContainer);
 }
-function beginFreeSelectionDrag(e) {
-  if (!_freeSelectionText || !isFreeSelectMode() || !isFreeSelectionStep()) return;
-  e.preventDefault();
-  const pop = null;
-  const zone = null;
-  if (!pop) return;
-  const rect = pop.getBoundingClientRect();
-  _freeDragState = { pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, left: rect.left, top: rect.top };
-  try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch (_) {}
-  pop.classList.add('dragging');
-  zone?.classList.add('visible');
-  const move = ev => {
-    if (!_freeDragState || ev.pointerId !== _freeDragState.pointerId) return;
-    ev.preventDefault();
-    const left = _freeDragState.left + ev.clientX - _freeDragState.startX;
-    const top = _freeDragState.top + ev.clientY - _freeDragState.startY;
-    pop.style.left = `${Math.max(8, Math.min(window.innerWidth - pop.offsetWidth - 8, left))}px`;
-    pop.style.top = `${Math.max(8, Math.min(window.innerHeight - pop.offsetHeight - 8, top))}px`;
-    const zr = zone?.getBoundingClientRect();
-    zone?.classList.toggle('drag-over', !!zr && ev.clientX >= zr.left && ev.clientX <= zr.right && ev.clientY >= zr.top && ev.clientY <= zr.bottom);
-  };
-  const end = ev => {
-    if (!_freeDragState || ev.pointerId !== _freeDragState.pointerId) return;
-    const zr = zone?.getBoundingClientRect();
-    const dropped = !!zr && ev.clientX >= zr.left && ev.clientX <= zr.right && ev.clientY >= zr.top && ev.clientY <= zr.bottom;
-    pop.classList.remove('dragging');
-    zone?.classList.remove('drag-over');
-    _freeDragState = null;
-    try { e.currentTarget.releasePointerCapture?.(ev.pointerId); } catch (_) {}
-    e.currentTarget.removeEventListener('pointermove', move);
-    if (dropped) addFreeSelection();
-    else showFreeSelectionPopover();
-  };
-  e.currentTarget.addEventListener('pointermove', move);
-  e.currentTarget.addEventListener('pointerup', end, { once: true });
-  e.currentTarget.addEventListener('pointercancel', end, { once: true });
-}
-function showFreeSelectionPopover() {
-  const pop = null;
-  const selection = window.getSelection();
-  if (!pop || !selection || !selection.rangeCount || !_freeSelectionText || !isFreeSelectMode() || !isFreeSelectionStep()) {
-    hideFreeSelectionPopover();
-    return;
-  }
-  if (!isSelectionInMaterial()) { hideFreeSelectionPopover(); return; }
-  const range = selection.getRangeAt(0);
-  const rect = range.getBoundingClientRect();
-  if (!rect || (!rect.width && !rect.height)) return;
-  // Native selection remains the only visible selection affordance.
-  const isMobile = window.innerWidth <= 600 || navigator.maxTouchPoints > 0;
-  pop.classList.remove('below');
-  pop.classList.add('visible');
-  const popWidth = pop.offsetWidth;
-  const popHeight = pop.offsetHeight;
-  const gap = 10;
-  let left;
-  let top;
-  if (isMobile) {
-    // 手机端放在选区上方或下方居中，不占选区侧边。
-    left = Math.max(8, Math.min(window.innerWidth - popWidth - 8, rect.left + (rect.width - popWidth) / 2));
-    top = rect.top - popHeight - gap;
-    if (top < 8) { top = rect.bottom + gap; pop.classList.add('below'); }
-  } else {
-    // 桌面端放在选区侧边，避免遮住材料文字。
-    left = rect.right + gap;
-    top = rect.top + (rect.height - popHeight) / 2;
-    if (left + popWidth > window.innerWidth - 8) left = rect.left - popWidth - gap;
-    if (left < 8) {
-      left = Math.max(8, Math.min(window.innerWidth - popWidth - 8, rect.left));
-      top = rect.bottom + gap;
-      if (top + popHeight > window.innerHeight - 8) { top = rect.top - popHeight - gap; pop.classList.add('below'); }
-    }
-  }
-  pop.style.left = `${Math.max(8, left)}px`;
-  pop.style.top = `${Math.max(8, Math.min(window.innerHeight - popHeight - 8, top))}px`;
-}
 function syncFreeSelectionFromWindow() {
   if (!isFreeSelectMode() || !isFreeSelectionStep()) return;
   const selection = window.getSelection();
   const text = selection ? selection.toString().replace(/\s+/g, ' ').trim() : '';
-  if (!text) { _freeSelectionText = ''; hideFreeSelectionPopover(); updateFreeSelectTools(); return; }
+  if (!text) { _freeSelectionText = ''; updateFreeSelectTools(); return; }
   if (!isSelectionInMaterial()) return;
   const range = selection.getRangeAt(0);
   _freeSelectionText = text;
   $('#freeSelectResult').textContent = '';
-  updateFreeSelectTools();
-  showFreeSelectionPopover();
+  // 延迟显示操作栏，等移动端系统菜单收起
+  const _isMobile = window.innerWidth <= 639 || navigator.maxTouchPoints > 0;
+  setTimeout(() => {
+    updateFreeSelectTools();
+  }, _isMobile ? 350 : 50);
 }
 async function judgeReviewSelection() {
   if (!isFreeSelectionStep() || !isFreeSelectMode() || !isWrongBookReviewMode() || !_freeReviewPendingText.trim() || !currentQ) return;
@@ -3867,7 +3798,6 @@ async function judgeReviewSelection() {
     _freeReviewPendingText = '';
     _freeSelectionText = '';
     window.getSelection()?.removeAllRanges();
-    hideFreeSelectionPopover();
     updateFreeSelectTools();
   } catch (e) {
     if (isCurrent()) { resultEl.className = 'free-select-result invalid'; resultEl.textContent = `复盘判断失败：${e.message || '请稍后重试'}`; }
@@ -3881,8 +3811,7 @@ function addFreeSelection() {
   if (isWrongBookReviewMode()) {
     _freeReviewPendingText = text;
     _freeSelectionText = '';
-    $('#freeSelectResult').textContent = '已加入待复盘选段，请点击下方“AI 判断复盘选段”。';
-    hideFreeSelectionPopover();
+    $('#freeSelectResult').textContent = '已加入待复盘选段，请点击下方"AI 判断复盘选段"。';
     window.getSelection()?.removeAllRanges();
     updateFreeSelectTools();
     return;
@@ -3903,7 +3832,6 @@ function addFreeSelection() {
   $('#freeSelectPreview').textContent = '已加入找点结果，可继续拖选';
   $('#freeSelectResult').textContent = '已记录，提交完整答案时统一判断。';
   $('#btnFreeSelectJudge').disabled = true;
-  hideFreeSelectionPopover();
   window.getSelection()?.removeAllRanges();
 }
 // ── Render groups (step 2) ──
@@ -4594,7 +4522,7 @@ async function callAI(messages, jsonMode = true, options = {}) {
     throw new Error(`${hint}：${detail.slice(0, 300)}`);
   }
   const data = await resp.json();
-  const content = readAIResponseContent(data);
+  let content = readAIResponseContent(data);
   if (!content) {
     console.warn('[AI] ⚠ API 响应数据:', JSON.stringify(data).slice(0, 500));
     const choice = data.choices?.[0] || {};
@@ -6135,7 +6063,7 @@ async function testApiConnection() {
     if (resp.ok) {
       const data = await resp.json();
       const reply = data.choices?.[0]?.message?.content || '';
-      resultEl.innerHTML = `<span style="color:#5c7a4e">连接成功 · 模型：${esc(model)} · 回复：${esc(reply.slice(0,30))}</span>`;
+      resultEl.innerHTML = `<span style="color:var(--success)">连接成功 · 模型：${esc(model)} · 回复：${esc(reply.slice(0,30))}</span>`;
       saveSettings();
       if (D.settings.mode !== 'online') {
         D.settings.mode = 'online';
@@ -6267,8 +6195,8 @@ async function fetchModels(baseUrl, apiKey, provider, opts = {}) {
     }
     $('#setModelManual').style.display = modelSel.value === '__manual__' ? 'block' : 'none';
     const okMsg = `已获取 ${models.length} 个模型`;
-    if (auto) { if (hint) hint.innerHTML = `<span style="color:#5c7a4e">${okMsg}，可在上方下拉选择</span>`; }
-    else $('#apiTestResult').innerHTML = `<span style="color:#5c7a4e">${okMsg}，可在上方选择</span>`;
+    if (auto) { if (hint) hint.innerHTML = `<span style="color:var(--success)">${okMsg}，可在上方下拉选择</span>`; }
+    else $('#apiTestResult').innerHTML = `<span style="color:var(--success)">${okMsg}，可在上方选择</span>`;
   } catch(e) {
     const diag = diagnoseFetchError(e, baseUrl, 10000);
     fail(`拉取失败：${diag.split('\n')[0]}`, auto ? `<div style="color:var(--zhu);text-align:left">${formatDiagnoseResult(diag)}</div>` : null);
@@ -6530,9 +6458,12 @@ function initApp() {
   $('#summaryMaterial').addEventListener('mouseup', finishFreeSelection);
   $('#summaryMaterial').addEventListener('touchend', finishFreeSelection, { passive: true });
   $('#summaryMaterial').addEventListener('contextmenu', e => e.preventDefault());
-  document.addEventListener('selectionchange', () => {
-    if (isFreeSelectMode() && isFreeSelectionStep()) setTimeout(syncFreeSelectionFromWindow, 0);
-  });
+  let _selChangeRaf = 0;
+document.addEventListener('selectionchange', () => {
+  if (!isFreeSelectMode() || !isFreeSelectionStep()) return;
+  cancelAnimationFrame(_selChangeRaf);
+  _selChangeRaf = requestAnimationFrame(() => syncFreeSelectionFromWindow());
+});
   $('#btnFreeSelectJudge').addEventListener('click', () => {
     if (isWrongBookReviewMode() && _freeReviewPendingText) judgeReviewSelection();
     else addFreeSelection();

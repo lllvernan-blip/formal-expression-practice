@@ -358,11 +358,14 @@ select:hover { border-color:var(--line-strong); }
 .free-select-preview:empty { display:none; }
 .free-select-result { flex-basis:100%; color:var(--dai-deep); line-height:1.6; }
 .free-select-result.invalid { color:var(--zhu); }
-.free-select-popover { position:fixed; z-index:45; display:none; padding:5px; border:1px solid var(--line-strong); border-radius:4px; background:var(--paper-2); box-shadow:var(--shadow-rise); }
-.free-select-popover.visible { display:block; }
-.free-select-popover::after { content:''; position:absolute; left:18px; bottom:-6px; width:10px; height:10px; background:var(--paper-2); border-right:1px solid var(--line-strong); border-bottom:1px solid var(--line-strong); transform:rotate(45deg); }
-.free-select-popover.below::after { top:-6px; bottom:auto; transform:rotate(225deg); }
-.free-select-popover .btn { position:relative; z-index:1; white-space:nowrap; }
+.free-select-popover { position:fixed; z-index:45; display:none; align-items:center; gap:4px; padding:5px; border:1px solid var(--line-strong); border-radius:4px; background:var(--paper-2); box-shadow:var(--shadow-rise); }
+.free-select-popover.visible { display:flex; }
+.free-select-popover::after { content:''; position:absolute; left:-6px; top:14px; width:10px; height:10px; background:var(--paper-2); border-left:1px solid var(--line-strong); border-bottom:1px solid var(--line-strong); transform:rotate(45deg); }
+.free-select-popover.below::after { left:auto; right:14px; top:-6px; border-left:0; border-bottom:0; border-right:1px solid var(--line-strong); border-top:1px solid var(--line-strong); transform:rotate(45deg); }
+.free-select-popover .selection-action { position:relative; z-index:1; width:32px; height:30px; display:grid; place-items:center; padding:0; border:0; border-radius:3px; font:700 18px/1 var(--font-sans); cursor:pointer; }
+.free-select-popover .selection-action.accept { color:#2f6b4f; background:rgba(47,107,79,.1); }
+.free-select-popover .selection-action.cancel { color:var(--zhu); background:rgba(176,58,40,.1); }
+.free-select-popover .selection-action:hover { filter:brightness(.92); }
 .free-select-panel { margin-top:10px; }
 .free-select-material { font-family:var(--font-serif); font-size:16px; line-height:2.3; text-align:justify; border-left:3px solid var(--zhu); padding:4px 4px 4px 16px; user-select:text; -webkit-user-select:text; touch-action:manipulation; cursor:text; }
 .free-select-selected { margin-top:12px; display:grid; gap:6px; }
@@ -1643,10 +1646,11 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
               <div class="sum-step-head"><span class="summary-step-no">01</span><span>圈出支撑答案的事实</span><span class="step-hint">排除背景、例子和修辞性描述</span></div>
               <div class="sum-segs" id="sumSegs"></div>
               <div id="freeSelectPanel" class="free-select-panel hidden">
-                <div class="step-hint">高难度：在连续材料中自由划选，选区旁会出现加入按钮；提交答案时由 AI 统一批改</div>
+                <div class="step-hint">通读时可直接划选事实；出现侧边操作条后，勾选加入练习，叉号放弃本次选区</div>
                 <blockquote class="free-select-material" id="freeSelectMaterial"></blockquote>
                 <div id="freeSelectPopover" class="free-select-popover" role="dialog" aria-label="选区操作">
-                  <button id="btnFreeSelectPopover" class="btn btn-ink btn-sm" type="button">加入练习选段</button>
+                  <button id="btnFreeSelectAccept" class="selection-action accept" type="button" aria-label="加入练习选段" title="加入练习选段">✓</button>
+                  <button id="btnFreeSelectCancel" class="selection-action cancel" type="button" aria-label="放弃本次选区" title="放弃本次选区">×</button>
                 </div>
                 <div id="freeSelectTools" class="free-select-tools" aria-live="polite">
                   <span class="free-select-preview" id="freeSelectPreview"></span>
@@ -3284,6 +3288,7 @@ async function confirmDiscardIfDraft() {
 // 防并发：AI 出题请求在途标记（练习与摸底共用）
 let _questionGenerating = false;
 let _questionRequestId = 0;
+let _answerRequestId = 0;
 let _questionLoadingPrevMode = null;
 
 function setQuestionLoading(visible, text = '正在准备下一题，请稍候…') {
@@ -3678,6 +3683,9 @@ function isFreeSelectMode() {
   // 找点方式由题目难度决定：L1/L2 预切片，L3 在线且配置 API 后才允许自由划选。
   return currentQ?.level === 'L3' && D.settings.mode === 'online' && !!getApiConfig();
 }
+function isFreeSelectionStep() {
+  return _sumStep === 0 || _sumStep === 1;
+}
 function isWrongBookReviewMode() {
   return _appMode === 'wrongBookReview';
 }
@@ -3713,10 +3721,12 @@ function updateFreeSelectTools() {
   const panel = $('#freeSelectPanel');
   const tools = $('#freeSelectTools');
   if (!panel || !tools) return;
+  placeFreeSelectPanel(free);
   panel.classList.toggle('hidden', !free);
   tools.classList.toggle('visible', free);
   const review = free && isWrongBookReviewMode();
-  $('#freeSelectPreview').textContent = _freeSelectionText ? `已选：${_freeSelectionText}` : (review ? '拖选一段，复盘它为什么对或不对' : '拖选材料中的任意连续文字');
+  $('#freeSelectPreview').textContent = _freeSelectionText ? `已选：${_freeSelectionText}` : (review ? '拖选一段，复盘它为什么对或不对' : '通读时拖选事实，勾选后加入练习');
+  $('#btnFreeSelectJudge').classList.toggle('hidden', free && !review);
   $('#btnFreeSelectJudge').textContent = review ? 'AI 判断复盘选段' : '加入练习选段';
   $('#btnFreeSelectJudge').disabled = !free || !_freeSelectionText;
   if (!free) {
@@ -3736,9 +3746,8 @@ function isSelectionInMaterial() {
 }
 function showFreeSelectionPopover() {
   const pop = $('#freeSelectPopover');
-  const btn = $('#btnFreeSelectPopover');
   const selection = window.getSelection();
-  if (!pop || !btn || !selection || !selection.rangeCount || !_freeSelectionText || !isFreeSelectMode() || _sumStep !== 1) {
+  if (!pop || !selection || !selection.rangeCount || !_freeSelectionText || !isFreeSelectMode() || !isFreeSelectionStep()) {
     hideFreeSelectionPopover();
     return;
   }
@@ -3746,32 +3755,28 @@ function showFreeSelectionPopover() {
   const range = selection.getRangeAt(0);
   const rect = range.getBoundingClientRect();
   if (!rect || (!rect.width && !rect.height)) return;
-  const review = isWrongBookReviewMode();
-  btn.textContent = review ? 'AI 判断复盘选段' : '加入练习选段';
-  const isMobile = navigator.maxTouchPoints > 0;
   pop.classList.remove('below');
   pop.classList.add('visible');
   const popWidth = pop.offsetWidth;
   const popHeight = pop.offsetHeight;
-  const left = Math.max(8, Math.min(window.innerWidth - popWidth - 8, rect.left + (rect.width - popWidth) / 2));
-  let top;
-  if (isMobile) {
-    // 移动端：优先放在选区下方，为原生工具栏预留 48px
-    top = rect.bottom + 48 + 10;
+  const gap = 10;
+  let left = rect.right + gap;
+  let top = rect.top + (rect.height - popHeight) / 2;
+  // 选区右侧放不下时翻到左侧；上下都逼仄时再退回选区下方。
+  if (left + popWidth > window.innerWidth - 8) left = rect.left - popWidth - gap;
+  if (left < 8) {
+    left = Math.max(8, Math.min(window.innerWidth - popWidth - 8, rect.left));
+    top = rect.bottom + gap;
     if (top + popHeight > window.innerHeight - 8) {
-      top = rect.top - popHeight - 10;
+      top = rect.top - popHeight - gap;
       pop.classList.add('below');
     }
-  } else {
-    // 桌面端：优先放在选区上方
-    top = rect.top - popHeight - 10;
-    if (top < 8) { top = Math.min(window.innerHeight - popHeight - 8, rect.bottom + 10); pop.classList.add('below'); }
   }
-  pop.style.left = `${left}px`;
-  pop.style.top = `${Math.max(8, top)}px`;
+  pop.style.left = `${Math.max(8, left)}px`;
+  pop.style.top = `${Math.max(8, Math.min(window.innerHeight - popHeight - 8, top))}px`;
 }
 function syncFreeSelectionFromWindow() {
-  if (!isFreeSelectMode() || _sumStep !== 1) return;
+  if (!isFreeSelectMode() || !isFreeSelectionStep()) return;
   const selection = window.getSelection();
   const text = selection ? selection.toString().replace(/\s+/g, ' ').trim() : '';
   if (!text) { _freeSelectionText = ''; hideFreeSelectionPopover(); updateFreeSelectTools(); return; }
@@ -3783,11 +3788,11 @@ function syncFreeSelectionFromWindow() {
   showFreeSelectionPopover();
 }
 async function judgeReviewSelection() {
-  if (_sumStep !== 1 || !isFreeSelectMode() || !isWrongBookReviewMode() || !_freeSelectionText.trim() || !currentQ) return;
+  if (!isFreeSelectionStep() || !isFreeSelectMode() || !isWrongBookReviewMode() || !_freeSelectionText.trim() || !currentQ) return;
   const text = _freeSelectionText.trim();
   const requestQuestion = currentQ;
   const requestId = ++_freeJudgeRequestId;
-  const isCurrent = () => requestId === _freeJudgeRequestId && currentQ === requestQuestion && _sumStep === 1 && isWrongBookReviewMode();
+  const isCurrent = () => requestId === _freeJudgeRequestId && currentQ === requestQuestion && isFreeSelectionStep() && isWrongBookReviewMode();
   const btn = $('#btnFreeSelectJudge');
   const resultEl = $('#freeSelectResult');
   const wrong = D.wrongBook?.[requestQuestion.id];
@@ -3814,7 +3819,7 @@ async function judgeReviewSelection() {
   }
 }
 function addFreeSelection() {
-  if (_sumStep !== 1 || !isFreeSelectMode() || !_freeSelectionText.trim() || !currentQ) return;
+  if (!isFreeSelectionStep() || !isFreeSelectMode() || !_freeSelectionText.trim() || !currentQ) return;
   const text = _freeSelectionText.trim();
   const existing = currentQ.slices.findIndex(s => s.free && s.text === text);
   if (existing >= 0) {
@@ -3883,8 +3888,14 @@ function renderSumRecap() {
 function readableMaterialHtml(text) {
   return String(text || '').trim().split(/\n\s*\n+/).filter(Boolean).map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('');
 }
+function placeFreeSelectPanel(free) {
+  const panel = $('#freeSelectPanel');
+  const target = free ? $('#summaryMode .sum-panel[data-p="0"] .card-material') : $('#summaryMode .sum-panel[data-p="1"]');
+  if (panel && target && panel.parentElement !== target) target.appendChild(panel);
+}
 function renderSummaryQuestion(q) {
   if (!q) {
+    placeFreeSelectPanel(false);
     $('#answerInput').disabled = true;
     $('#btnSubmit').disabled = true;
     $('#summaryType').textContent = '概括训练 · 请导入材料';
@@ -3909,6 +3920,7 @@ function renderSummaryQuestion(q) {
   $('#summaryContext').textContent = q.context;
   $('#summaryMaterial').innerHTML = readableMaterialHtml(q.material);
   $('#freeSelectMaterial').innerHTML = readableMaterialHtml(q.material);
+  placeFreeSelectPanel(isFreeSelectMode());
   // Source line
   let srcHtml = `来源：${esc(q.source)}`;
   if (q.sourceUrl) srcHtml += ` · <a href="${esc(q.sourceUrl)}" target="_blank" rel="noopener">原文链接</a>`;
@@ -4000,6 +4012,10 @@ function setPracticeSwitchLoading(visible, text = '正在切换练习内容，�
 }
 
 function setTrainingMode(mode, refresh = true) {
+  // 结果区由两种训练共用；切换时让旧批改立即退场，旧请求也不得回写。
+  _answerRequestId++;
+  $('#compareMode')?.classList.add('hidden');
+  $('#practiceMode')?.classList.remove('reviewing');
   D.settings.trainingMode = mode === 'rewrite' ? 'rewrite' : 'summary';
   $$('#trainingSwitch .seg-btn').forEach(b => {
     const on = b.dataset.training === D.settings.trainingMode;
@@ -4103,7 +4119,7 @@ ${pointsDesc}
 【批改流程（必须严格执行）】
 1. 先把参考答案拆成采分点和语义单元；
 2. 把学习者答案按标点和语义切分成多个单元；
-3. 每个用户单元匹配到一个或多个采分点，标记 status：covered(已覆盖)/partial(部分覆盖，如停留在事实层)/missing(漏点)/extra(多余)/uncertain(无法判断是否等价，不直接扣分，标 uncertain 让用户对照)；
+3. 每个用户单元匹配到一个或多个采分点，标记 status：covered(已覆盖)/partial(部分覆盖，如停留在事实层)/missing(漏点)/extra(多余)/uncertain(无法判断是否等价，不直接扣分，界面显示为“待对照”；不要在说明文字里输出英文状态名)；
 4. problemType 枚举：none/漏点/事实不准/归类不当/概括过窄/概括过宽/口语化/重复/逻辑不清；
 5. 对每个单元给出原文片段、对应采分点、判断、原因、建议改法、参考表达；comment 必须有依据（对应材料哪个事实或哪个采分点），禁止"表述不够规范""概括不到位"这类无依据评语；suggestion 给出可直接替换的写法；
 6. 最后给 4 个维度分数：信息要点（要点覆盖全不全、事实准不准）、概括提炼（概括是否准确，不过宽过窄、不停留在事实层）、表达规范（有无口语化）、逻辑结构（答案结构是否完整清晰）；各 0-10，每个都要给 score 和一句话 comment（说清这个分数扣在哪）；评分锚点：9-10=接近参考答案，7-8=小问题，5-6=明显漏点或概括偏差，≤4=大半未达标；
@@ -4112,7 +4128,7 @@ ${pointsDesc}
 
 【返回严格 JSON】
 {"overall":"总体评价","units":[{"userText":"用户答案原文片段","matchedPoint":"对应采分点","status":"covered|partial|missing|extra|uncertain","problemType":"none|漏点|事实不准|归类不当|概括过窄|概括过宽|口语化|重复|逻辑不清","comment":"原因","suggestion":"建议改法","referenceText":"参考表达"}],"dimensions":{"信息要点":{"score":0,"comment":"评语"},"概括提炼":{"score":0,"comment":"评语"},"表达规范":{"score":0,"comment":"评语"},"逻辑结构":{"score":0,"comment":"评语"}},"score":0,"nextFocus":"下一步重点"}`;
-  const sysMsg = {role:'system',content:AI_SYSTEM_BASE+' 所有 string 字段值必须用简体中文，不要混入英文或拼音术语。status 只能是 covered|partial|missing|extra|uncertain；problemType 只能是上方枚举值。nextFocus 必须从本题学习者的实际错误出发归纳成可迁移的通用概括技巧，先点明本题错在哪、再给通用做法；禁止脱离本题错误的空泛建议。'};
+  const sysMsg = {role:'system',content:AI_SYSTEM_BASE+' 所有 string 字段值必须用简体中文，不要混入英文或拼音术语。status 的 JSON 值只能是 covered|partial|missing|extra|uncertain，但 uncertain 在界面显示为“待对照”，任何评语和建议都不要输出这个英文状态名。problemType 只能是上方枚举值。nextFocus 必须从本题学习者的实际错误出发归纳成可迁移的通用概括技巧，先点明本题错在哪、再给通用做法；禁止脱离本题错误的空泛建议。'};
   const resp = await callAI([sysMsg, {role:'user',content:prompt}]);
   const result = parseJSON(resp);
   showSummaryOnlineCompare(q, selected, names, answer, result);
@@ -4409,6 +4425,26 @@ const AI_TASK_DEFAULTS = {
   review: { maxTokens: 1800, timeoutMs: 45000 }
 };
 
+function extractAIText(value) {
+  if (typeof value === 'string') return value.trim();
+  if (Array.isArray(value)) {
+    return value.map(part => typeof part === 'string' ? part : part?.text || part?.content || '').filter(Boolean).join('').trim();
+  }
+  if (value && typeof value === 'object') return String(value.text || value.content || '').trim();
+  return '';
+}
+function readAIResponseContent(data) {
+  const choice = data?.choices?.[0] || {};
+  const message = choice.message || {};
+  return extractAIText(message.content)
+    || extractAIText(choice.text)
+    || extractAIText(data?.output_text)
+    || extractAIText(data?.output?.text)
+    || extractAIText(data?.output?.choices?.[0]?.message?.content)
+    || extractAIText(data?.result)
+    || extractAIText(data?.data?.choices?.[0]?.message?.content);
+}
+
 async function callAI(messages, jsonMode = true, options = {}) {
   const cfg = getApiConfig();
   const meta = getModelMeta(cfg ? cfg.model : '');
@@ -4488,16 +4524,15 @@ async function callAI(messages, jsonMode = true, options = {}) {
     throw new Error(`${hint}：${detail.slice(0, 300)}`);
   }
   const data = await resp.json();
-  let content = data.choices?.[0]?.message?.content;
-  // fallback: 某些非标准提供商可能用不同结构
-  if (!content) {
-    content = data.output?.text || data.output?.choices?.[0]?.message?.content
-           || data.result || data.data?.choices?.[0]?.message?.content || '';
-  }
+  const content = readAIResponseContent(data);
   if (!content) {
     console.warn('[AI] ⚠ API 响应数据:', JSON.stringify(data).slice(0, 500));
-    const keys = Object.keys(data).join(', ');
-    throw new Error(`API 返回格式异常：缺少 choices[0].message.content（实际顶层字段：${keys}）。请检查 API 配置或换用其他模型。`);
+    const choice = data.choices?.[0] || {};
+    const message = choice.message || {};
+    const detail = choice.finish_reason === 'length'
+      ? '模型输出达到上限，内容可能被截断'
+      : Object.keys(message).length ? `message 字段为：${Object.keys(message).join(', ')}` : `choice 字段为：${Object.keys(choice).join(', ') || '空'}`;
+    throw new Error(`API 返回格式异常：未取得可用文本（${detail}；顶层字段：${Object.keys(data).join(', ')}）。请检查模型兼容性或换用其他模型。`);
   }
 
   // 切语言自动重试（仅 JSON 模式）
@@ -4982,6 +5017,9 @@ async function finishLevelTest() {
 // ============================================================
 async function aiSubmitAnswer(userAnswer) {
   if (!currentQ) return;
+  const requestId = ++_answerRequestId;
+  const requestQ = currentQ;
+  const isCurrent = () => requestId === _answerRequestId && getTrainingMode() === 'rewrite' && currentQ === requestQ;
   try {
     $('#btnRewriteSubmit').disabled = true; $('#btnRewriteSubmit').textContent = 'AI 批改中…';
     // 对照区先出骨架，避免白屏等待
@@ -5009,18 +5047,22 @@ async function aiSubmitAnswer(userAnswer) {
 {"corrections":[{"original":"学习者答案逐字片段","suggestion":"建议改法","reason":"具体原因"}],"dimensions":{"信息要点":{"score":0,"comment":"评语"},"概括提炼":{"score":0,"comment":"评语"},"表达规范":{"score":0,"comment":"评语"},"逻辑结构":{"score":0,"comment":"评语"}},"score":0,"overallComment":"点名最主要问题的一两句话","demoRewrite":"基于学习者答案的最小改动规范版","nextFocus":"从本题错误归纳的可迁移技巧"}`;
     const resp = await callAI([{role:'system',content:AI_SYSTEM_BASE+' 所有 string 字段值必须用简体中文，不要混入英文或拼音术语。corrections[*].original 必须是学习者答案中逐字摘录的片段。nextFocus 必须从本题学习者的实际错误出发归纳成可迁移的通用技巧，先点明本题错在哪、再给通用做法；禁止脱离本题错误的空泛建议。'},{role:'user',content:prompt}]);
     const result = parseJSON(resp);
+    if (!isCurrent()) return;
 
-    showOnlineCompare(currentQ, userAnswer, result);
+    showOnlineCompare(requestQ, userAnswer, result);
     recordOnlineResult(userAnswer, result);
 
     updateProfileFromResult(result);
     flushPersist();
   } catch(e) {
+    if (!isCurrent()) return;
     showToast('AI 批改失败：' + e.message);
     console.error('aiSubmitAnswer error:', e);
     // AI-only 模式不生成离线替代结果，保留用户答案等待重试。
   } finally {
-    $('#btnRewriteSubmit').disabled = false; $('#btnRewriteSubmit').textContent = '提交';
+    if (requestId === _answerRequestId) {
+      $('#btnRewriteSubmit').disabled = false; $('#btnRewriteSubmit').textContent = '提交';
+    }
   }
 }
 
@@ -6419,15 +6461,21 @@ function initApp() {
   $('#freeSelectMaterial').addEventListener('touchend', finishFreeSelection, { passive: true });
   $('#freeSelectMaterial').addEventListener('contextmenu', e => e.preventDefault());
   document.addEventListener('selectionchange', () => {
-    if (isFreeSelectMode() && _sumStep === 1) setTimeout(syncFreeSelectionFromWindow, 0);
+    if (isFreeSelectMode() && isFreeSelectionStep()) setTimeout(syncFreeSelectionFromWindow, 0);
   });
   $('#btnFreeSelectJudge').addEventListener('click', () => {
     if (isWrongBookReviewMode()) judgeReviewSelection();
     else addFreeSelection();
   });
-  $('#btnFreeSelectPopover').addEventListener('click', () => {
+  $('#btnFreeSelectAccept').addEventListener('click', () => {
     if (isWrongBookReviewMode()) judgeReviewSelection();
     else addFreeSelection();
+  });
+  $('#btnFreeSelectCancel').addEventListener('click', () => {
+    _freeSelectionText = '';
+    hideFreeSelectionPopover();
+    window.getSelection()?.removeAllRanges();
+    updateFreeSelectTools();
   });
   document.addEventListener('pointerdown', e => {
     const pop = $('#freeSelectPopover');

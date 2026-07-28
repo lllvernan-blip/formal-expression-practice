@@ -3,9 +3,12 @@ _dev/*
 !_dev/
 !_dev/check.js
 !_dev/_validate.js
+!_dev/behavior.js
 .workbuddy/
 .qoder/
 .cola-task.md
 .claude/plans/
 _inbox/
 _rejected/
+_archive/
+QODER_CONTEXT.md

@@ -242,15 +242,16 @@ a { color: var(--dai); }
 /* AI 生成中：换一题按钮呼吸提示 */
 .btn.generating { opacity:.7; animation:btnPulse 1.6s ease infinite; }
 @keyframes btnPulse { 0%,100%{opacity:.7} 50%{opacity:.45} }
-.question-loading {
+.question-loading, .practice-switch-loading {
   display:flex; align-items:center; justify-content:center; gap:10px;
   max-width:880px; margin:0 auto 12px; padding:8px 12px;
   border:1px solid var(--line); background:rgba(255,255,255,.48);
   color:var(--muted); font-family:var(--font-sans); font-size:12px;
 }
-.question-loading.hidden { display:none; }
-.question-loading .loading-dot { width:7px; height:7px; border-radius:50%; background:var(--zhu); animation:btnPulse 1.2s ease infinite; }
+.question-loading.hidden, .practice-switch-loading.hidden { display:none; }
+.question-loading .loading-dot, .practice-switch-loading .loading-dot { width:7px; height:7px; border-radius:50%; background:var(--zhu); animation:btnPulse 1.2s ease infinite; }
 .question-loading .btn { margin-left:6px; }
+#desk.practice-switching #summaryMode, #desk.practice-switching #practiceMode { visibility:hidden; }
 .btn-ink {
   background:var(--zhu); color:#f8f1e0; border-color:var(--zhu-deep);
   box-shadow:0 3px 12px -4px rgba(142,44,29,.55);
@@ -322,7 +323,9 @@ select:hover { border-color:var(--line-strong); }
 .seg-btn:last-child { border-right:none; }
 .seg-btn:hover { color:var(--ink); }
 .seg-btn.active { background:var(--ink); color:var(--paper); }
-.summary-material { font-size:17px; line-height:2; }
+.summary-material { font-size:17px; line-height:2; max-height:52vh; overflow:auto; padding-right:8px; }
+.summary-material p, .free-select-material p { margin:0 0 1em; text-indent:2em; }
+.summary-material p:last-child, .free-select-material p:last-child { margin-bottom:0; }
 .material-brief { font-size:13px; color:var(--muted); letter-spacing:.05em; margin:-4px 0 2px; }
 .summary-steps { display:grid; gap:20px; }
 .summary-step { border-top:1px solid var(--line); padding-top:16px; }
@@ -355,8 +358,13 @@ select:hover { border-color:var(--line-strong); }
 .free-select-preview:empty { display:none; }
 .free-select-result { flex-basis:100%; color:var(--dai-deep); line-height:1.6; }
 .free-select-result.invalid { color:var(--zhu); }
+.free-select-popover { position:fixed; z-index:45; display:none; padding:5px; border:1px solid var(--line-strong); border-radius:4px; background:var(--paper-2); box-shadow:var(--shadow-rise); }
+.free-select-popover.visible { display:block; }
+.free-select-popover::after { content:''; position:absolute; left:18px; bottom:-6px; width:10px; height:10px; background:var(--paper-2); border-right:1px solid var(--line-strong); border-bottom:1px solid var(--line-strong); transform:rotate(45deg); }
+.free-select-popover.below::after { top:-6px; bottom:auto; transform:rotate(225deg); }
+.free-select-popover .btn { position:relative; z-index:1; white-space:nowrap; }
 .free-select-panel { margin-top:10px; }
-.free-select-material { font-family:var(--font-serif); font-size:16px; line-height:2.3; text-align:justify; border-left:3px solid var(--zhu); padding:4px 4px 4px 16px; user-select:text; }
+.free-select-material { font-family:var(--font-serif); font-size:16px; line-height:2.3; text-align:justify; border-left:3px solid var(--zhu); padding:4px 4px 4px 16px; user-select:text; -webkit-user-select:text; touch-action:manipulation; cursor:text; }
 .free-select-selected { margin-top:12px; display:grid; gap:6px; }
 .free-selected-seg { cursor:pointer; padding:7px 9px; border-left:3px solid var(--gold); background:var(--hi); color:#5a3a10; line-height:1.6; }
 .free-selected-seg:hover { opacity:.82; }
@@ -461,7 +469,7 @@ select:hover { border-color:var(--line-strong); }
 .layer-item.good { border-left-color:var(--dai); }
 .layer-item.warn { border-left-color:var(--zhu); }
 .layer-title { font-weight:700; font-size:14px; letter-spacing:.1em; }
-.layer-copy { color:var(--ink-soft); font-size:13.5px; margin-top:3px; }
+.layer-subtitle { color:var(--ink-soft); font-size:13.5px; margin-top:3px; }
 /* ── 结构化反馈组件 ── */
 .fb-stat { font-size:13px; font-weight:600; color:var(--ink); margin-bottom:6px; }
 .fb-detail { font-size:13px; color:var(--ink-soft); margin:4px 0; line-height:1.7; }
@@ -616,6 +624,11 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
 .wrong-book-badge { display:inline-block; font-size:11px; padding:2px 8px; border-radius:3px; border:1px solid var(--line); background:transparent; color:var(--muted); cursor:pointer; margin-left:6px; transition:all .2s; }
 .wrong-book-badge.has-wrong { border-color:#c0392b; color:#c0392b; background:rgba(192,57,43,.06); }
 .wrong-book-badge.wrong-only { border-color:#c0392b; color:#fff; background:#c0392b; }
+.nav-wrong-book { position:relative; }
+.nav-wrong-book b { display:none; position:absolute; top:4px; right:-5px; min-width:15px; height:15px; padding:0 3px; border-radius:8px; background:var(--zhu); color:#fff; font:10px/15px var(--font-sans); letter-spacing:0; }
+.nav-wrong-book.has-wrong b { display:inline-block; }
+.nav-wrong-book.wrong-only { color:var(--zhu); }
+
 /* 题头分割线：朱砂细线 + 墨色压线 */
 .card-rule { height:4px; border-top:1px solid var(--zhu-line); border-bottom:1px solid var(--ink-30); transition:border-color .4s ease; }
 
@@ -700,7 +713,7 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
 }
 @keyframes ringDraw { to { stroke-dashoffset:0; } }
 @keyframes scorePop { 0% { opacity:0; transform:scale(.55); } 55% { opacity:1; transform:scale(1.14); } 100% { opacity:1; transform:scale(1); } }
-.score-copy { min-width:0; }
+.score-text { min-width:0; }
 /* 离线概括训练：用过程统计替代伪精确分数环 */
 .offline-overview { display:flex; flex-direction:column; gap:5px; min-width:148px; padding:4px 0; }
 .ov-row { display:flex; align-items:baseline; gap:8px; font-size:13px; line-height:1.5; }
@@ -802,7 +815,7 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
 .dim-tag.weak { color:var(--zhu); border:1px solid var(--zhu-line); }
 .dim-tag.strong { color:var(--dai); border:1px solid var(--dai-line); }
 .dim-comment { display:block; font-size:11.5px; color:var(--muted); letter-spacing:0; margin-top:2px; line-height:1.5; }
-.profile-trend { font-size:12.5px; color:var(--ink-soft); margin-top:6px; font-family:var(--font-sans); }
+.profile-trend { font-size:12.5px; color:var(--muted); margin-top:6px; font-family:var(--font-serif); font-weight:400; line-height:1.6; }
 .profile-trend .up { color:var(--dai); font-weight:600; }
 .profile-trend .down { color:var(--zhu); font-weight:600; }
 .level-explain { font-size:12.5px; color:var(--muted); margin-top:3px; line-height:1.6; font-family:var(--font-sans); }
@@ -1205,16 +1218,16 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
   .hist-domain { display:none; }
   .action-row { flex-wrap:wrap; }
 
-  /* 答题卡：模式独占一行，筛选和换题保持同一操作带 */
-  .practice-toolbar { margin-bottom:12px; grid-template-columns:1fr; row-gap:9px; }
-  .mode-bar { grid-column:1; justify-content:space-between; gap:8px; padding:0; }
-  .mode-bar-label { font-size:11px; letter-spacing:.12em; }
-  .filter-bar__tools { width:100%; min-width:0; justify-content:flex-start; flex-wrap:nowrap; gap:7px; }
+  /* 答题卡：换题和模式同一行，筛选单独一行，主体更早进入视野 */
+  .practice-toolbar { margin-bottom:10px; grid-template-columns:minmax(0,1fr) auto; row-gap:7px; }
+  .mode-bar { grid-column:1; justify-content:flex-start; gap:7px; padding:0; min-width:0; }
+  .mode-bar-label { font-size:10px; letter-spacing:.08em; white-space:nowrap; }
+  .filter-bar__tools { grid-column:1 / -1; width:100%; min-width:0; justify-content:flex-start; flex-wrap:nowrap; gap:7px; }
   .filter-bar__tools .select-wrap { flex:1; min-width:0; }
   .filter-bar__tools select { width:100%; min-width:0; font-size:12px; }
   #difficultyGroup .seg-btn { padding-left:8px; padding-right:8px; }
-  .toolbar-skip { width:100%; align-self:stretch; }
-  .toolbar-skip .btn { width:100%; height:38px; padding-left:10px; padding-right:10px; }
+  .toolbar-skip { width:auto; align-self:center; }
+  .toolbar-skip .btn { width:auto; height:34px; padding:5px 10px; }
   .kbd-hint { display:none; }
   .card-head { padding:2px 0 10px; }
   .card-foot { flex-wrap:wrap; gap:10px; }
@@ -1250,7 +1263,8 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
   .filter-bar__tools { width:100%; }
   .filter-bar__tools .select-wrap { flex:1; }
   .filter-bar__tools select { width:100%; }
-  .toolbar-skip .btn { flex:1; }
+  .toolbar-skip .btn { flex:0 0 auto; }
+  .nav-wrong-book .nav-en { display:none; }
   .oral { font-size:16px; }
   .summary-material { font-size:15.5px; }
   .card-material .oral { margin-bottom:10px; }
@@ -1472,7 +1486,12 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
 .um-result h4 { font-size:14px; letter-spacing:.1em; margin-bottom:10px; color:var(--dai-deep); }
 .um-result pre { font-size:13px; line-height:1.7; white-space:pre-wrap; word-break:break-all; font-family:var(--font-mono); max-height:300px; overflow-y:auto; }
 .um-result .um-original { border-left:3px solid var(--ink-30); padding-left:14px; margin-bottom:14px; }
-.um-result .um-ai { border-left:3px solid var(--dai-line); padding-left:14px; }
+.um-result .um-ai { border-left:3px solid var(--dai-line); padding-left:14px; line-height:1.9; }
+.um-chunk-picker { display:grid; gap:7px; margin-top:10px; padding:10px 12px; border:1px dashed var(--line-strong); background:rgba(255,255,255,.28); }
+.um-chunk-picker.hidden { display:none; }
+.um-chunk-picker label { font-size:12px; color:var(--muted); }
+.um-chunk-picker select { width:100%; }
+.um-chunk-note { font-size:12px; color:var(--muted); line-height:1.6; }
 .um-file-group { display:grid; gap:18px; }
 .um-list { list-style:none; }
 .um-list li {
@@ -1532,6 +1551,7 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
     <button class="nav-btn" data-tab="scan">检查<span class="nav-en">PROOF</span></button>
     <button class="nav-btn" data-tab="archive">记录<span class="nav-en">RECORDS</span></button>
     <button class="nav-btn" data-tab="materials">材料<span class="nav-en">IMPORT</span></button>
+    <button class="nav-btn nav-wrong-book" type="button" title="只练错题">错题本<span class="nav-en">WRONG</span><b id="navWrongCount" aria-label="错题数量"></b></button>
     <span id="navInk"></span>
   </nav>
 
@@ -1579,6 +1599,10 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
             <button id="btnRewriteSkip" class="btn btn-line btn-sm hidden">换一题</button>
           </span>
         </div>
+        <div id="practiceSwitchLoading" class="practice-switch-loading hidden" role="status" aria-live="polite">
+          <span class="loading-dot" aria-hidden="true"></span>
+          <span id="practiceSwitchLoadingText">正在切换练习内容，请稍候…</span>
+        </div>
         <div id="questionLoading" class="question-loading hidden" role="status" aria-live="polite">
           <span class="loading-dot" aria-hidden="true"></span>
           <span id="questionLoadingText">正在准备下一题，请稍候…</span>
@@ -1619,11 +1643,14 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
               <div class="sum-step-head"><span class="summary-step-no">01</span><span>圈出支撑答案的事实</span><span class="step-hint">排除背景、例子和修辞性描述</span></div>
               <div class="sum-segs" id="sumSegs"></div>
               <div id="freeSelectPanel" class="free-select-panel hidden">
-                <div class="step-hint">高难度：先在连续材料中自由划选；只有点击下方按钮后，才交给 AI 判断</div>
+                <div class="step-hint">高难度：在连续材料中自由划选，选区旁会出现加入按钮；提交答案时由 AI 统一批改</div>
                 <blockquote class="free-select-material" id="freeSelectMaterial"></blockquote>
+                <div id="freeSelectPopover" class="free-select-popover" role="dialog" aria-label="选区操作">
+                  <button id="btnFreeSelectPopover" class="btn btn-ink btn-sm" type="button">加入练习选段</button>
+                </div>
                 <div id="freeSelectTools" class="free-select-tools" aria-live="polite">
                   <span class="free-select-preview" id="freeSelectPreview"></span>
-                  <button id="btnFreeSelectJudge" class="btn btn-line btn-sm" type="button" disabled>AI 判断选中内容</button>
+                  <button id="btnFreeSelectJudge" class="btn btn-line btn-sm" type="button" disabled>加入练习选段</button>
                   <span id="freeSelectResult" class="free-select-result"></span>
                 </div>
                 <div id="freeSelectSelected" class="free-select-selected"></div>
@@ -1633,6 +1660,7 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
             <!-- Panel 2: 归类·命名 -->
             <div class="sum-panel hidden" data-p="2">
               <div class="sum-step-head"><span class="summary-step-no">02</span><span>归类 · 命名</span><span class="step-hint">把事实分组，写出上位概括词</span></div>
+              <p style="font:11px/1.4 var(--font-sans);color:var(--muted);margin:6px 0 0">一个事实可以支撑多个要点，也可只归入一个</p>
               <details class="sum-peek"><summary>回看材料原文</summary><div class="sum-peek-body" id="sumPeekMat"></div></details>
               <div class="sum-count-row"><label for="sumGroupCount">采分点数量</label><input type="number" id="sumGroupCount" min="1" max="8" placeholder="如 4"></div>
               <div id="sumGroups"></div>
@@ -1727,7 +1755,7 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
             <span><span class="sev sev-medium">中</span>表达含混，建议改写</span>
             <span><span class="sev sev-low">轻</span>赘字口水，可直接删</span>
           </div>
-          <p class="side-note">离线词库即贴即查；在设置中配置 API 后，由 AI 逐句细查并给出总评。</p>
+          <p class="side-note">配置 AI 接口后，由 AI 逐句细查并给出总评。</p>
         </div>
         <div id="scanResultCard" class="scan-result hidden">
           <div id="scanResult" class="scan-text"></div>
@@ -1792,6 +1820,11 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
           <div class="um-file-row">
             <button id="btnUmUploadMaterial" class="btn btn-line btn-sm" type="button">上传材料文件</button>
             <span id="umMaterialFileInfo" class="um-file-info"></span>
+          </div>
+          <div id="umChunkPicker" class="um-chunk-picker hidden">
+            <label for="umMaterialChunk">材料较长，先选择一个练习片段</label>
+            <select id="umMaterialChunk"></select>
+            <span id="umChunkNote" class="um-chunk-note"></span>
           </div>
         </div>
         <div class="form-group">
@@ -1867,10 +1900,8 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
 
   <div class="form-group">
     <label>练习模式</label>
-    <select id="setMode">
-      <option value="offline">离线自练 · 题库 + 自评对照</option>
-      <option value="online">AI 陪练 · 自适应出题 + 智能批改</option>
-    </select>
+    <input type="text" value="AI 陪练 · 题目与批改均由 AI 完成" disabled>
+    <select id="setMode" hidden><option value="online">AI 陪练</option></select>
   </div>
   <div id="modeInfo" style="margin-bottom:8px"></div>
 
@@ -1909,8 +1940,9 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
       <input type="range" id="setTemperature" min="0" max="1.5" step="0.1" value="0.7">
     </div>
     <div class="form-group">
-      <label>Max Tokens</label>
-      <input type="number" id="setMaxTokens" value="2000" min="256" max="8192" step="128">
+      <label>输出上限</label>
+      <span id="setMaxTokensDisplay" class="drawer-note">由模型与任务自动设置，无需手动调整</span>
+      <input type="hidden" id="setMaxTokens" value="16384" data-max-output="16384">
     </div>
   </div>
   <div class="drawer-actions">
@@ -1974,7 +2006,7 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
         </div>
         <div class="demo-arrow">改 写 示 范 ↓</div>
         <div class="demo-formal">村容村貌显著改善，基础设施不断完善，群众满意度稳步提升。</div>
-        <p class="slide-note">提交后与参考答案对照批改；AI 陪练模式下更有逐句批改建议。</p>
+        <p class="slide-note">提交后由 AI 逐句批改，给出具体替换建议和可迁移的表达训练重点。</p>
       </section>
 
       <section class="intro-slide" data-slide="3">
@@ -1982,15 +2014,15 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
         <h3 class="slide-title">选择你的练习方式</h3>
         <div class="welcome-opts">
           <button class="welcome-opt" id="welcomeOffline">
-            <h4><span>01 ·</span> 离线自练</h4>
-            <p>规范改写支持离线练习；概括训练请在“我的材料”中提供自己的材料，由 AI 生成题目后练习。</p>
+            <h4><span>01 ·</span> AI 规范改写</h4>
+            <p>配置 API Key 后，由 AI 生成规范改写题目，提交后逐句批改并给出具体修改建议。</p>
           </button>
           <button class="welcome-opt" id="welcomeOnline">
-            <h4><span>02 ·</span> AI 陪练</h4>
-            <p>配置 API Key 后，AI 按你的画像自适应出题、逐句批改，并生成能力画像。</p>
+            <h4><span>02 ·</span> AI 概括训练</h4>
+            <p>在“我的材料”中提供自己有权使用的材料，由 AI 生成概括题、切片和采分点后练习。</p>
           </button>
         </div>
-        <p class="slide-note">之后随时可在右上角「设置」中切换模式。</p>
+        <p class="slide-note">之后随时可在右上角「设置」中更新 AI 接口配置。</p>
       </section>
 
     </div>
@@ -2052,7 +2084,7 @@ let persistTimer = null;
 // 现 API 配置独立于 D，读写都走这里，D.settings 只留非敏感的 mode/trainingMode/theme。
 // 清空练习记录、连接旧数据文件、切离线都不影响 API 配置。
 const API_SETTINGS_KEY = 'formal_expression_api_settings_v1';
-const defaultApiSettings = { provider:'', apiKey:'', model:'', baseUrl:'', temperature:0.7, maxTokens:2000 };
+const defaultApiSettings = { provider:'', apiKey:'', model:'', baseUrl:'', temperature:0.7, maxTokens:16384 };
 let _apiSettings = null;
 function loadApiSettings() {
   if (_apiSettings) return _apiSettings;
@@ -2077,7 +2109,7 @@ function mergeApiSettingsFromFile(fileApi) {
   if (!s.model && fileApi.model) { s.model = fileApi.model; changed = true; }
   if (!s.baseUrl && fileApi.baseUrl) { s.baseUrl = fileApi.baseUrl; changed = true; }
   if (typeof s.temperature !== 'number' && typeof fileApi.temperature === 'number') { s.temperature = fileApi.temperature; changed = true; }
-  if ((!s.maxTokens || s.maxTokens === 2000) && fileApi.maxTokens && fileApi.maxTokens !== 2000) { s.maxTokens = fileApi.maxTokens; changed = true; }
+  if ((!s.maxTokens || s.maxTokens === defaultApiSettings.maxTokens) && fileApi.maxTokens && fileApi.maxTokens !== defaultApiSettings.maxTokens) { s.maxTokens = fileApi.maxTokens; changed = true; }
   if (changed) saveApiSettings();
 }
 // 旧版本把 API 配置存在 D.settings：一次性迁移到独立存储（仅本地为空时迁）
@@ -2090,7 +2122,7 @@ function migrateApiSettingsFromLegacy() {
   if (!s.model && legacy.model) { s.model = legacy.model; changed = true; }
   if (!s.baseUrl && legacy.baseUrl) { s.baseUrl = legacy.baseUrl; changed = true; }
   if (typeof s.temperature !== 'number' && typeof legacy.temperature === 'number') { s.temperature = legacy.temperature; changed = true; }
-  if ((!s.maxTokens || s.maxTokens === 2000) && legacy.maxTokens && legacy.maxTokens !== 2000) { s.maxTokens = legacy.maxTokens; changed = true; }
+  if ((!s.maxTokens || s.maxTokens === defaultApiSettings.maxTokens) && legacy.maxTokens && legacy.maxTokens !== defaultApiSettings.maxTokens) { s.maxTokens = legacy.maxTokens; changed = true; }
   if (changed) saveApiSettings();
 }
 // 过滤练习数据中的敏感字段：载入数据文件时 API 配置不进 D.settings
@@ -2109,7 +2141,7 @@ function applyParsedData(parsed) {
 const defaultData = {
   version: 2,
   updatedAt: 0,
-  settings: { mode: '', trainingMode: 'summary', theme: 'light' },
+  settings: { mode: 'online', trainingMode: 'summary', theme: 'light' },
   profile: null,
   history: [],
   scanHistory: [],
@@ -2327,9 +2359,43 @@ function genMaterialId() {
   return 'um_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
 }
 
+function materialMatchKey(text) {
+  return String(text || '').replace(/[\s，。；：！？、,.!?;:（）()【】\[\]“”"‘’'「」《》]/g, '');
+}
+function canonicalMaterialExcerpt(material, candidate) {
+  const raw = String(candidate || '').trim();
+  if (!raw) return '';
+  if (String(material || '').includes(raw)) return raw;
+  const source = String(material || '');
+  const sourceKey = materialMatchKey(source);
+  const candidateKey = materialMatchKey(raw);
+  if (!candidateKey || candidateKey.length < 4) return '';
+  const start = sourceKey.indexOf(candidateKey);
+  if (start < 0) return '';
+  let keyPos = 0, sourceStart = -1, sourceEnd = -1;
+  for (let i = 0; i < source.length; i++) {
+    if (materialMatchKey(source[i])) {
+      if (keyPos === start) sourceStart = i;
+      if (keyPos === start + candidateKey.length - 1) { sourceEnd = i + 1; break; }
+      keyPos++;
+    }
+  }
+  return sourceStart >= 0 && sourceEnd > sourceStart ? source.slice(sourceStart, sourceEnd) : '';
+}
+function normalizeMaterialPointIndexes(result) {
+  if (!result || !Array.isArray(result.points) || !Array.isArray(result.slices)) return result;
+  const validSlices = result.slices.filter(s => s && s.valid === true && Number.isInteger(Number(s.point)));
+  validSlices.forEach(s => { s.point = Number(s.point); });
+  const nums = validSlices.map(s => s.point);
+  const looksOneBased = nums.length > 0 && nums.every(n => n >= 1 && n <= result.points.length) && nums.some(n => n === result.points.length);
+  if (looksOneBased) validSlices.forEach(s => { s.point = Number(s.point) - 1; });
+  return result;
+}
 function validateUserMaterialResult(result, fallbackMaterial, requirePracticeData = false) {
   if (!result || typeof result !== 'object') throw new Error('AI 返回结果不是有效对象');
-  const material = String(result.material || fallbackMaterial || '').trim();
+  normalizeMaterialPointIndexes(result);
+  const material = String(fallbackMaterial || result.material || '').trim();
+  if (fallbackMaterial) result.material = material;
   const points = Array.isArray(result.points) ? result.points : [];
   const slices = Array.isArray(result.slices) ? result.slices : [];
   if (!material) throw new Error('AI 返回结果缺少材料文本');
@@ -2338,8 +2404,13 @@ function validateUserMaterialResult(result, fallbackMaterial, requirePracticeDat
   }
   slices.forEach((slice, index) => {
     const text = String(slice && slice.text || '').trim();
-    if (text && !material.includes(text)) {
-      throw new Error(`第 ${index + 1} 个切片在材料中找不到对应文本`);
+    if (text) {
+      const excerpt = canonicalMaterialExcerpt(material, text);
+      if (!excerpt) {
+        console.warn(`[AI] ⚠ 切片 #${index + 1} 无法对齐 | 原文片段: "${text.slice(0, 60)}${text.length > 60 ? '…' : ''}"`);
+        throw new Error(`第 ${index + 1} 个切片与原材料无法对齐，请让 AI 按原文重新切片`);
+      }
+      slice.text = excerpt;
     }
     if (slice && slice.valid) {
       if (!Number.isInteger(slice.point) || slice.point < 0 || slice.point >= points.length) {
@@ -2373,9 +2444,8 @@ function updateModeStatus() {
   const warn = online && !apiReady;
   el.classList.toggle('connected', connected);
   el.classList.toggle('warn', warn);
-  $('#modeStatusText').textContent = connected ? '在线' : (warn ? '待配置' : '离线');
-  el.title = connected ? 'AI 接口已配置，在线模式'
-    : (warn ? '在线模式，但 API 尚未配置完成' : '离线模式：题库自练');
+  $('#modeStatusText').textContent = connected ? '在线' : '待配置';
+  el.title = connected ? 'AI 接口已配置，在线练习可用' : '请配置 AI 接口后开始练习';
 }
 
 async function initData() {
@@ -2414,6 +2484,7 @@ async function initData() {
   migrateV1();
   slimHistoryStorage();
   migrateApiSettingsFromLegacy(); // 老版本把 apiKey 存在 D.settings：一次性迁到独立存储
+  D.settings.mode = 'online';
   updateModeStatus();
 }
 
@@ -3244,9 +3315,12 @@ function cancelQuestionGeneration() {
     $('#btnRewriteSubmit').disabled = !snap.draft.trim();
     updateCharCount();
   } else {
-    // 无快照（如首次进入即在线生成）：兜底给一道题库题，避免骨架屏残留
-    const q = pickQuestion();
-    if (q) showQuestionOnDesk(q);
+    $('#qDomain').textContent = '需要重新生成';
+    $('#qLevel').textContent = '—';
+    $('#qContext').textContent = '请点击“换一题”，重新请求 AI 生成规范改写题。';
+    $('#questionOral').textContent = '';
+    $('#rewriteAnswerInput').disabled = true;
+    $('#btnRewriteSubmit').disabled = true;
   }
   showToast('已返回当前题');
 }
@@ -3255,13 +3329,28 @@ const rewriteQuestionCache = new Map();
 let _questionDeskSnapshot = null; // 在途生成开始前的改写书案快照（取消时还原）
 
 async function showRewriteQuestion(force = false) {
+  if (!getApiConfig()) {
+    setQuestionLoading(false);
+    $('#qDomain').textContent = '需要 AI';
+    $('#qLevel').textContent = '—';
+    $('#qContext').innerHTML = '请先在「<a style="color:var(--zhu);cursor:pointer;text-decoration:underline;text-underline-offset:3px" id="emptyGoSettingsRw">设置</a>」中配置 AI 接口，规范改写题目将由 AI 生成。';
+    $('#emptyGoSettingsRw').onclick = () => openDrawer();
+    $('#questionOral').textContent = '配置完成后，点击“换一题”开始 AI 规范改写练习。';
+    $('#rewriteAnswerInput').value = '';
+    $('#rewriteAnswerInput').disabled = true;
+    $('#btnRewriteSubmit').disabled = true;
+    $('#btnRewriteSkip').disabled = false;
+    $('#practiceMode').classList.remove('hidden');
+    $('#summaryMode').classList.add('hidden');
+    return;
+  }
   const cacheKey = `rewrite:${$('#domainSelect').value}:${getSelectedDifficulty()}`;
   if (!force) {
     const cached = rewriteQuestionCache.get(cacheKey);
     if (cached) { showQuestionOnDesk(cached); return; }
   }
 
-  if (D.settings.mode === 'online' && getApiConfig()) {
+  {
     if (_questionGenerating) return;
     const requestId = ++_questionRequestId;
     _questionGenerating = true;
@@ -3293,15 +3382,15 @@ async function showRewriteQuestion(force = false) {
       }
     } catch(e) {
       if (requestId !== _questionRequestId) return;
-      console.warn('AI question gen failed, fallback to bank', e);
-      const fallback = pickQuestion();
-      if (requestId === _questionRequestId && fallback && ctx.training === D.settings.trainingMode && ctx.level === getSelectedDifficulty()
-          && ctx.domain === $('#domainSelect').value) {
-        showQuestionOnDesk(fallback);
-        showToast('出题未成，已换用题库');
-      } else {
-        showToast('出题未成，请检查设置');
-      }
+      console.warn('AI question generation failed', e);
+      $('#qDomain').textContent = '生成失败';
+      $('#qLevel').textContent = '—';
+      $('#qContext').textContent = 'AI 题目生成失败，请检查接口配置或稍后重试。';
+      $('#questionOral').textContent = e.message || '请稍后重试';
+      $('#rewriteAnswerInput').value = '';
+      $('#rewriteAnswerInput').disabled = true;
+      $('#btnRewriteSubmit').disabled = true;
+      showToast('AI 出题失败：' + (e.message || '请稍后重试'));
     } finally {
       if (requestId !== _questionRequestId) return;
       _questionGenerating = false;
@@ -3316,15 +3405,7 @@ async function showRewriteQuestion(force = false) {
     return;
   }
 
-  const q = pickQuestion();
-  if (!q) {
-    $('#qDomain').textContent = '—'; $('#qLevel').textContent = '—'; $('#qContext').textContent = '';
-    $('#questionOral').textContent = '题库数据异常，请刷新页面重试。';
-    $('#rewriteAnswerInput').disabled = true;
-    $('#btnRewriteSubmit').disabled = true;
-    return;
-  }
-  showQuestionOnDesk(q);
+  return;
 }
 
 async function aiGenerateQuestion() {
@@ -3374,7 +3455,7 @@ keyPoints：["将『搞过一阵子』替换为『开展专项探索』，避免
   let lastErr = '';
   for (let attempt = 0; attempt < 3; attempt++) {
     if (attempt > 0) msgs.push({role:'user', content:'上一次返回的题目未通过质量校验（' + lastErr + '），请严格按题型与字数要求重新出题：口语原句 60-180 字、keyPoints ≥ 3 条且为「X→Y」具体修改点、不得出现英文/拼音。'});
-    const resp = await callAI(msgs);
+    const resp = await callAI(msgs, true, { task: 'question' });
     let parsed;
     try { parsed = parseJSON(resp); }
     catch (e) { lastErr = 'JSON 解析失败'; continue; }
@@ -3511,6 +3592,7 @@ function pickSummaryQuestion(forceWrong) {
 const summaryQuestionCache = new Map();
 let _summaryGenerating = false;
 let _sumStep = 0; // current wizard step
+let _appMode = 'practice'; // 'practice' | 'wrongBookReview'
 
 // ── 错题本 ──
 function updateWrongBook(qId, isWrong, reasons) {
@@ -3542,11 +3624,28 @@ function restorePendingWrongBook() {
   renderWrongBookBadge();
 }
 function renderWrongBookBadge() {
-  const el = $('#wrongBookBadge');
-  if (!el) return;
   const n = Object.keys(D.wrongBook || {}).length;
-  el.textContent = n > 0 ? `错题本 ${n}` : '错题本';
-  el.classList.toggle('has-wrong', n > 0);
+  const el = $('#wrongBookBadge');
+  if (el) {
+    el.textContent = n > 0 ? `错题本 ${n}` : '错题本';
+    el.classList.toggle('has-wrong', n > 0);
+  }
+  const nav = $('.nav-wrong-book');
+  const count = $('#navWrongCount');
+  if (nav) nav.classList.toggle('has-wrong', n > 0);
+  if (count) count.textContent = n > 99 ? '99+' : (n ? String(n) : '');
+
+}
+function getWrongReasonStats() {
+  const stats = {};
+  const wb = D.wrongBook || {};
+  for (const qId in wb) {
+    const reasons = wb[qId].reasons || [];
+    reasons.forEach(r => { stats[r] = (stats[r] || 0) + 1; });
+  }
+  return Object.entries(stats)
+    .sort((a, b) => b[1] - a[1])
+    .map(([reason, count]) => ({ reason, count }));
 }
 
 // ── Wizard navigation ──
@@ -3579,6 +3678,17 @@ function isFreeSelectMode() {
   // 找点方式由题目难度决定：L1/L2 预切片，L3 在线且配置 API 后才允许自由划选。
   return currentQ?.level === 'L3' && D.settings.mode === 'online' && !!getApiConfig();
 }
+function isWrongBookReviewMode() {
+  return _appMode === 'wrongBookReview';
+}
+function setAppMode(mode) {
+  _appMode = mode;
+  const isWrong = mode === 'wrongBookReview';
+  const badge = $('#wrongBookBadge');
+  if (badge) badge.classList.toggle('wrong-only', isWrong);
+  const nav = $('.nav-wrong-book');
+  if (nav) nav.classList.toggle('wrong-only', isWrong);
+}
 function sumSelectedSlices() {
   const selector = isFreeSelectMode() ? '#freeSelectSelected .free-selected-seg.selected' : '#sumSegs .sum-seg.selected';
   return $$(selector).map(s => Number(s.dataset.i));
@@ -3605,59 +3715,126 @@ function updateFreeSelectTools() {
   if (!panel || !tools) return;
   panel.classList.toggle('hidden', !free);
   tools.classList.toggle('visible', free);
-  $('#freeSelectPreview').textContent = _freeSelectionText ? `已选：${_freeSelectionText}` : '拖选材料中的任意连续文字';
+  const review = free && isWrongBookReviewMode();
+  $('#freeSelectPreview').textContent = _freeSelectionText ? `已选：${_freeSelectionText}` : (review ? '拖选一段，复盘它为什么对或不对' : '拖选材料中的任意连续文字');
+  $('#btnFreeSelectJudge').textContent = review ? 'AI 判断复盘选段' : '加入练习选段';
   $('#btnFreeSelectJudge').disabled = !free || !_freeSelectionText;
-  if (!free) $('#freeSelectResult').textContent = '';
-}
-async function judgeFreeSelection() {
-  // AI 只核验学习者主动划选的文字，不参与通读阶段，也不主动给出答案。
-  if (_sumStep !== 1 || !isFreeSelectMode()) return;
-  const text = _freeSelectionText.trim();
-  const requestQuestion = currentQ;
-  const requestStep = _sumStep;
-  const requestId = ++_freeJudgeRequestId;
-  if (!text || !requestQuestion) return;
-  const isRequestCurrent = () => requestId === _freeJudgeRequestId
-    && currentQ === requestQuestion
-    && _sumStep === requestStep
-    && _sumStep === 1
-    && isFreeSelectMode();
-  const btn = $('#btnFreeSelectJudge');
-  const resultEl = $('#freeSelectResult');
-  btn.disabled = true; btn.textContent = 'AI 判断中…';
-  resultEl.className = 'free-select-result'; resultEl.textContent = '正在判断这段文字是否构成可采事实…';
-  try {
-    const prompt = `题目：${requestQuestion.prompt || ''}\n题型：${requestQuestion.type || ''}\n采分点：${(requestQuestion.points || []).map((p, i) => `${i}：${p.name || ''}`).join('；')}\n材料中用户自由选中的文字：${text}\n\n请判断这段文字是否是支撑本题答案的有效事实。只能根据原文，不得补造。返回严格 JSON：{"valid":true或false,"point":有效时对应的采分点索引，否则为-1,"reason":"简短中文理由"}`;
-    const raw = await callAI([{role:'system',content:AI_SYSTEM_BASE + ' 你是申论材料找点审阅者。只返回 JSON，所有说明使用简体中文。'}, {role:'user',content:prompt}], true);
-    if (!isRequestCurrent()) return;
-    const verdict = parseJSON(raw);
-    const pointIndex = Number(verdict.point);
-    const valid = verdict.valid === true && Number.isInteger(pointIndex) && pointIndex >= 0 && pointIndex < (requestQuestion.points || []).length;
-    resultEl.className = `free-select-result${valid ? '' : ' invalid'}`;
-    resultEl.textContent = valid ? `✓ 有效信息，建议归入：${requestQuestion.points[pointIndex]?.name || '第' + (pointIndex + 1) + '点'}。${verdict.reason || ''}` : `不作为采分事实：${verdict.reason || '与本题采分点对应关系不足'}`;
-    if (valid) {
-      const selected = new Set(sumSelectedSlices());
-      requestQuestion.slices.push({text, punct:'', valid:true, point:pointIndex, reason:verdict.reason || '', free:true});
-      selected.add(currentQ.slices.length - 1);
-      renderFreeSelectedSlices(selected);
-      $('#sumSelCount').textContent = String(sumSelectedSlices().length);
-      _freeSelectionText = '';
-      $('#freeSelectPreview').textContent = '已加入找点结果，可继续拖选';
-      btn.disabled = true;
-      window.getSelection()?.removeAllRanges();
-    }
-  } catch (e) {
-    if (!isRequestCurrent()) return;
-    resultEl.className = 'free-select-result invalid';
-    resultEl.textContent = `判断失败：${e.message || '请稍后重试'}`;
-  } finally {
-    if (isRequestCurrent()) {
-      btn.textContent = 'AI 判断选中内容';
-      btn.disabled = !_freeSelectionText;
-    }
+  if (!free) {
+    $('#freeSelectResult').textContent = '';
+    hideFreeSelectionPopover();
   }
 }
-
+function hideFreeSelectionPopover() {
+  const pop = $('#freeSelectPopover');
+  if (pop) pop.classList.remove('visible', 'below');
+}
+function isSelectionInMaterial() {
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return false;
+  const el = $('#freeSelectMaterial');
+  return el && el.contains(sel.getRangeAt(0).commonAncestorContainer);
+}
+function showFreeSelectionPopover() {
+  const pop = $('#freeSelectPopover');
+  const btn = $('#btnFreeSelectPopover');
+  const selection = window.getSelection();
+  if (!pop || !btn || !selection || !selection.rangeCount || !_freeSelectionText || !isFreeSelectMode() || _sumStep !== 1) {
+    hideFreeSelectionPopover();
+    return;
+  }
+  if (!isSelectionInMaterial()) { hideFreeSelectionPopover(); return; }
+  const range = selection.getRangeAt(0);
+  const rect = range.getBoundingClientRect();
+  if (!rect || (!rect.width && !rect.height)) return;
+  const review = isWrongBookReviewMode();
+  btn.textContent = review ? 'AI 判断复盘选段' : '加入练习选段';
+  const isMobile = navigator.maxTouchPoints > 0;
+  pop.classList.remove('below');
+  pop.classList.add('visible');
+  const popWidth = pop.offsetWidth;
+  const popHeight = pop.offsetHeight;
+  const left = Math.max(8, Math.min(window.innerWidth - popWidth - 8, rect.left + (rect.width - popWidth) / 2));
+  let top;
+  if (isMobile) {
+    // 移动端：优先放在选区下方，为原生工具栏预留 48px
+    top = rect.bottom + 48 + 10;
+    if (top + popHeight > window.innerHeight - 8) {
+      top = rect.top - popHeight - 10;
+      pop.classList.add('below');
+    }
+  } else {
+    // 桌面端：优先放在选区上方
+    top = rect.top - popHeight - 10;
+    if (top < 8) { top = Math.min(window.innerHeight - popHeight - 8, rect.bottom + 10); pop.classList.add('below'); }
+  }
+  pop.style.left = `${left}px`;
+  pop.style.top = `${Math.max(8, top)}px`;
+}
+function syncFreeSelectionFromWindow() {
+  if (!isFreeSelectMode() || _sumStep !== 1) return;
+  const selection = window.getSelection();
+  const text = selection ? selection.toString().replace(/\s+/g, ' ').trim() : '';
+  if (!text) { _freeSelectionText = ''; hideFreeSelectionPopover(); updateFreeSelectTools(); return; }
+  if (!isSelectionInMaterial()) return;
+  const range = selection.getRangeAt(0);
+  _freeSelectionText = text;
+  $('#freeSelectResult').textContent = '';
+  updateFreeSelectTools();
+  showFreeSelectionPopover();
+}
+async function judgeReviewSelection() {
+  if (_sumStep !== 1 || !isFreeSelectMode() || !isWrongBookReviewMode() || !_freeSelectionText.trim() || !currentQ) return;
+  const text = _freeSelectionText.trim();
+  const requestQuestion = currentQ;
+  const requestId = ++_freeJudgeRequestId;
+  const isCurrent = () => requestId === _freeJudgeRequestId && currentQ === requestQuestion && _sumStep === 1 && isWrongBookReviewMode();
+  const btn = $('#btnFreeSelectJudge');
+  const resultEl = $('#freeSelectResult');
+  const wrong = D.wrongBook?.[requestQuestion.id];
+  btn.disabled = true; btn.textContent = 'AI 复盘中…';
+  resultEl.className = 'free-select-result';
+  resultEl.textContent = '正在结合本题错因复盘这段材料…';
+  try {
+    const prompt = `你是申论错题复盘教练。用户正在复盘一道错题。\n题目：${requestQuestion.prompt || ''}\n题型：${requestQuestion.type || ''}\n采分点：${(requestQuestion.points || []).map((p, i) => `${i}：${p.name || ''}`).join('；')}\n本题记录的错因：${(wrong?.reasons || []).join('、') || '未记录'}\n用户这次自由选中的原文：${text}\n\n请判断这段原文是否支撑本题某个采分点，重点解释它为什么应该选或为什么不应选。只能依据材料原文，不得补造。返回严格 JSON：{"valid":true或false,"point":有效时的采分点索引，否则为-1,"reason":"具体说明它与采分点/错因的关系","next":"一句可执行的复盘建议"}`;
+    const raw = await callAI([{ role:'system', content:AI_SYSTEM_BASE + ' 你是错题复盘教练，只返回 JSON，所有说明使用简体中文。' }, { role:'user', content:prompt }], true, { task: 'review' });
+    if (!isCurrent()) return;
+    const verdict = parseJSON(raw);
+    const point = Number(verdict.point);
+    const valid = verdict.valid === true && Number.isInteger(point) && point >= 0 && point < (requestQuestion.points || []).length;
+    resultEl.className = `free-select-result${valid ? '' : ' invalid'}`;
+    resultEl.textContent = `${valid ? '✓ 这段属于有效事实' : '✗ 这段不属于本题有效采分事实'}：${verdict.reason || 'AI 未给出具体理由'}${verdict.next ? ` 复盘建议：${verdict.next}` : ''}`;
+    _freeSelectionText = '';
+    window.getSelection()?.removeAllRanges();
+    hideFreeSelectionPopover();
+    updateFreeSelectTools();
+  } catch (e) {
+    if (isCurrent()) { resultEl.className = 'free-select-result invalid'; resultEl.textContent = `复盘判断失败：${e.message || '请稍后重试'}`; }
+  } finally {
+    if (isCurrent()) { btn.textContent = 'AI 判断复盘选段'; btn.disabled = !_freeSelectionText; }
+  }
+}
+function addFreeSelection() {
+  if (_sumStep !== 1 || !isFreeSelectMode() || !_freeSelectionText.trim() || !currentQ) return;
+  const text = _freeSelectionText.trim();
+  const existing = currentQ.slices.findIndex(s => s.free && s.text === text);
+  if (existing >= 0) {
+    const selected = new Set(sumSelectedSlices());
+    selected.add(existing);
+    renderFreeSelectedSlices(selected);
+  } else {
+    currentQ.slices.push({ text, punct: '', valid: null, point: -1, reason: '待提交时由 AI 批改', free: true });
+    const selected = new Set(sumSelectedSlices());
+    selected.add(currentQ.slices.length - 1);
+    renderFreeSelectedSlices(selected);
+  }
+  $('#sumSelCount').textContent = String(sumSelectedSlices().length);
+  _freeSelectionText = '';
+  $('#freeSelectPreview').textContent = '已加入找点结果，可继续拖选';
+  $('#freeSelectResult').textContent = '已记录，提交完整答案时统一判断。';
+  $('#btnFreeSelectJudge').disabled = true;
+  hideFreeSelectionPopover();
+  window.getSelection()?.removeAllRanges();
+}
 // ── Render groups (step 2) ──
 function renderSumGroups() {
   const n = parseInt($('#sumGroupCount').value, 10);
@@ -3703,29 +3880,35 @@ function renderSumRecap() {
 }
 
 // ── Render question (wizard init) ──
+function readableMaterialHtml(text) {
+  return String(text || '').trim().split(/\n\s*\n+/).filter(Boolean).map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('');
+}
 function renderSummaryQuestion(q) {
   if (!q) {
     $('#answerInput').disabled = true;
     $('#btnSubmit').disabled = true;
     $('#summaryType').textContent = '概括训练 · 请导入材料';
     $('#summaryContext').textContent = '内置来源型材料已移除，避免转载风险';
-    $('#summaryMaterial').textContent = '请前往“我的材料”，粘贴或上传你有权使用的材料，再让 AI 生成概括训练题。';
+    $('#summaryMaterial').innerHTML = '请前往「<a style="color:var(--zhu);cursor:pointer;text-decoration:underline;text-underline-offset:3px" id="emptyGoArchive">我的材料</a>」，粘贴或上传你有权使用的材料，再让 AI 生成概括训练题。';
+    $('#emptyGoArchive').onclick = () => switchTab('materials');
     $('#freeSelectMaterial').textContent = '';
     $('#summarySource').textContent = '提示：使用自己的材料或确认拥有使用权的材料。';
-    return showToast('请先在“我的材料”中导入材料并生成题目');
+    $('#summaryMode').classList.remove('hidden');
+    $('#practiceMode').classList.add('hidden');
+    return showToast('请先在"我的材料"中导入材料并生成题目');
   }
   currentQ = { ...q, slices: (q.slices || []).map(sl => ({ ...sl })) };
   q = currentQ;
-  const aiQuestion = q.sourceType === 'AI生成训练材料（非离线来源原文）';
+  const aiQuestion = true;
   // 仿真题干：概括角度随 q.type 变化，学习者据此明确任务目标
   const STEM_ACTION = { '做法': '概括资料中反映的主要做法', '问题': '概括资料中反映的主要问题', '成效': '概括资料中反映的主要成效', '变化': '概括资料中反映的主要变化', '经验': '概括资料中反映的主要经验' };
   const stemAction = STEM_ACTION[q.type] || `概括资料的主要内容（${q.type}）`;
   $('#sumStem').innerHTML = `<span class="stem-q">根据给定资料，${esc(stemAction)}。</span><span class="stem-req">要求：全面、准确、有条理，不超过 150 字。</span>`;
-  $('#summaryType').textContent = `概括${q.type} · ${aiQuestion ? 'AI出题' : '离线题库'}`;
+  $('#summaryType').textContent = `概括${q.type} · AI出题`;
   $('#summaryLevel').textContent = q.level;
   $('#summaryContext').textContent = q.context;
-  $('#summaryMaterial').textContent = q.material;
-  $('#freeSelectMaterial').textContent = q.material;
+  $('#summaryMaterial').innerHTML = readableMaterialHtml(q.material);
+  $('#freeSelectMaterial').innerHTML = readableMaterialHtml(q.material);
   // Source line
   let srcHtml = `来源：${esc(q.source)}`;
   if (q.sourceUrl) srcHtml += ` · <a href="${esc(q.sourceUrl)}" target="_blank" rel="noopener">原文链接</a>`;
@@ -3764,9 +3947,37 @@ function renderSummaryQuestion(q) {
 
 // ── showSummaryQuestion (keep AI generation logic) ──
 async function showSummaryQuestion(force = false) {
-  // 在线/离线均从真实题库挑题；AI 价值体现在提交后的批改，不编材料
-  const forceWrong = window._isWrongOnly ? window._isWrongOnly() : false;
-  renderSummaryQuestion(pickSummaryQuestion(forceWrong));
+  if (!getApiConfig()) {
+    renderSummaryQuestion(null);
+    $('#summaryType').textContent = '概括训练 · 需要 AI';
+    $('#summaryContext').textContent = '概括题目、切片和批改均由 AI 完成';
+    $('#summaryMaterial').innerHTML = '请先在「<a style="color:var(--zhu);cursor:pointer;text-decoration:underline;text-underline-offset:3px" id="emptyGoSettings">设置</a>」中配置 AI 接口，再从「<a style="color:var(--zhu);cursor:pointer;text-decoration:underline;text-underline-offset:3px" id="emptyGoArchive2">我的材料</a>」导入自己的材料并生成题目。';
+    $('#emptyGoSettings').onclick = () => openDrawer();
+    $('#emptyGoArchive2').onclick = () => switchTab('materials');
+    $('#summarySource').textContent = '当前不提供离线题库。';
+    $('#summaryMode').classList.remove('hidden');
+    $('#practiceMode').classList.add('hidden');
+    return;
+  }
+  const forceWrong = isWrongBookReviewMode();
+  const q = pickSummaryQuestion(forceWrong);
+  if (forceWrong && !D.wrongBook?.[q?.id]) {
+    const wbEmpty = !Object.keys(D.wrongBook || {}).length;
+    if (wbEmpty) showToast('错题本暂无题目');
+    else showToast('错题本中的题目暂不可用');
+    setAppMode('practice');
+    if (wbEmpty) {
+      const notice = document.createElement('div');
+      notice.className = 'mode-notice';
+      notice.textContent = '已退出错题模式，恢复普通练习';
+      notice.style.cssText = 'background:var(--zhu-soft);color:var(--zhu);padding:8px 16px;font:13px/1.5 var(--font-sans);text-align:center;margin-bottom:12px;border-radius:var(--radius);transition:opacity .4s;';
+      $('#summaryMode').prepend(notice);
+      setTimeout(() => { notice.style.opacity = '0'; setTimeout(() => notice.remove(), 500); }, 3000);
+    }
+    showSummaryQuestion();
+    return;
+  }
+  renderSummaryQuestion(q || null);
 }
 
 
@@ -3777,6 +3988,15 @@ async function showSummaryQuestion(force = false) {
 
 function showPracticeQuestion() {
   return getTrainingMode() === 'summary' ? showSummaryQuestion() : showRewriteQuestion();
+}
+
+function setPracticeSwitchLoading(visible, text = '正在切换练习内容，请稍候…') {
+  const desk = $('#desk');
+  const box = $('#practiceSwitchLoading');
+  if (!desk || !box) return;
+  $('#practiceSwitchLoadingText').textContent = text;
+  desk.classList.toggle('practice-switching', visible);
+  box.classList.toggle('hidden', !visible);
 }
 
 function setTrainingMode(mode, refresh = true) {
@@ -3790,7 +4010,11 @@ function setTrainingMode(mode, refresh = true) {
   renderPracticeMeta();
   renderPracticeTip();
   markDirty();
-  if (refresh) showPracticeQuestion();
+  if (!refresh) return;
+  setPracticeSwitchLoading(true, D.settings.trainingMode === 'rewrite' ? '正在准备规范改写题…' : '正在载入概括训练…');
+  const pending = showPracticeQuestion();
+  if (pending && typeof pending.finally === 'function') pending.finally(() => setPracticeSwitchLoading(false));
+  else setPracticeSwitchLoading(false);
 }
 
 // ── Name matching (ported from prototype) ──
@@ -3851,7 +4075,7 @@ function assessSummary(q, selected, groups, answer) {
 }
 
 // 概括训练 AI 批改：逐语义单元匹配采分点，返回结构化结果。
-// 失败时抛错，由 submitSummary catch 后降级离线对照（带降级标注）。
+// 失败时抛错，由 submitSummary 保留当前答案并提示重试。
 async function aiAssessSummary(q, selected, names, answer) {
   const btn = $('#btnSubmit');
   if (btn) { btn.disabled = true; btn.textContent = 'AI 批改中…'; }
@@ -3931,120 +4155,86 @@ function showSummaryOnlineCompare(q, selected, names, answer, result) {
     return `<div class="dim-card"><div class="dc-head"><span class="dc-name">${k}</span><span class="dc-score">${v.score}</span></div><div class="dc-def">${DIM_DEFS[k]}</div>${v.comment ? `<div class="dc-comment">${esc(v.comment)}</div>` : ''}</div>`;
   }).join('');
   const scoreVal = Number(result.score)||0;
-  $('#compareMode').innerHTML = `<div class="verdict"><div class="verdict-head"><div class="verdict-eyebrow">AI 批改 · 逐语义单元</div><div class="score-head"><div class="score-circle"><svg class="score-ring" viewBox="0 0 92 70" aria-hidden="true"><path d="M10 40 C5 22 28 7 48 8 C72 9 89 24 85 41 C81 58 57 66 39 63 C19 60 3 56 10 40 Z"/></svg><span class="score-num"><span class="score-value" data-score="${scoreVal}">0</span><span class="score-max">/ 10</span></span></div><div class="score-copy"><div class="verdict-title">逐句批改摘要</div><div class="verdict-lede">AI 批改 · 模型：${esc(modelName)}。逐语义单元匹配采分点，标 uncertain 的请自行对照。</div><div class="band-tag">${scoreBand(scoreVal).label}档 · ${scoreBand(scoreVal).desc}</div></div></div></div><div class="layer-list"><div class="layer-item"><div class="layer-title">逐句反馈</div><div class="layer-copy">${unitsHtml || '<div class="fb-detail">未返回逐句反馈</div>'}</div></div><div class="layer-item"><div class="layer-title">维度评分</div><div class="layer-copy"><div class="dim-cards" style="margin:4px 0">${dimsHtml || '-'}</div>${rubricHtml()}</div></div></div><div class="verdict-grid"><figure class="verdict-col"><figcaption>你的答案<span class="fig-en">YOURS</span></figcaption><div class="verdict-text user grid-paper">${esc(answer)}</div></figure><figure class="verdict-col"><figcaption>参考答案<span class="fig-en">REFERENCE</span></figcaption><div class="verdict-text ref">${esc(q.ref)}</div></figure></div>${result.overall?`<div class="fb-detail fb-ok" style="margin-top:8px">总体评价：${esc(result.overall)}</div>`:''}${result.nextFocus?`<div class="fb-detail" style="margin-top:6px">下一步重点：${esc(result.nextFocus)}</div>`:''}<div class="action-row"><button class="btn btn-text" id="btnSummaryRetry" type="button">重新作答</button><button class="btn btn-ink" id="btnSummaryNext" type="button">下一题 -></button></div></div>`;
+  $('#compareMode').innerHTML = `<div class="verdict"><div class="verdict-head"><div class="verdict-eyebrow">AI 批改 · 逐语义单元</div><div class="score-head"><div class="score-circle"><svg class="score-ring" viewBox="0 0 92 70" aria-hidden="true"><path d="M10 40 C5 22 28 7 48 8 C72 9 89 24 85 41 C81 58 57 66 39 63 C19 60 3 56 10 40 Z"/></svg><span class="score-num"><span class="score-value" data-score="${scoreVal}">0</span><span class="score-max">/ 10</span></span></div><div class="score-text"><div class="verdict-title">逐句批改摘要</div><div class="verdict-lede">AI 批改 · 模型：${esc(modelName)}。逐语义单元匹配采分点，标 uncertain 的请自行对照。</div><div class="band-tag">${scoreBand(scoreVal).label}档 · ${scoreBand(scoreVal).desc}</div></div></div></div><div class="layer-list"><div class="layer-item"><div class="layer-title">逐句反馈</div><div class="layer-subtitle">${unitsHtml || '<div class="fb-detail">未返回逐句反馈</div>'}</div></div><div class="layer-item"><div class="layer-title">维度评分</div><div class="layer-subtitle"><div class="dim-cards" style="margin:4px 0">${dimsHtml || '-'}</div>${rubricHtml()}</div></div></div><div class="verdict-grid"><figure class="verdict-col"><figcaption>你的答案<span class="fig-en">YOURS</span></figcaption><div class="verdict-text user grid-paper">${esc(answer)}</div></figure><figure class="verdict-col"><figcaption>参考答案<span class="fig-en">REFERENCE</span></figcaption><div class="verdict-text ref">${esc(q.ref)}</div></figure></div>${result.overall?`<div class="fb-detail fb-ok" style="margin-top:8px">总体评价：${esc(result.overall)}</div>`:''}${result.nextFocus?`<div class="fb-detail" style="margin-top:6px">下一步重点：${esc(result.nextFocus)}</div>`:''}<div class="action-row"><button class="btn btn-text" id="btnSummaryRetry" type="button">重新作答</button><button class="btn btn-ink" id="btnSummaryNext" type="button">下一题 -></button></div></div>`;
   staggerMarks($('#compareMode'));
   const scoreEl = $('#compareMode .score-value');
   if (scoreEl) animateScore(scoreEl, scoreEl.dataset.score);
 }
 
-// ── Submit (offline + AI degradation) ──
-async function submitSummary(forceOffline) {
-  if (!currentQ) { showToast('题目未备，请稍候或刷新'); return; }
-  const q = currentQ;
+// ── Submit (AI only) ──
+async function submitWrongBookReview(q) {
   const answer = $('#answerInput').value.trim();
   const selected = sumSelectedSlices();
   const groups = readSumGroups();
   if (!selected.length) return showToast('先圈出支撑答案的事实');
   if (!groups.length || !groups.some(g => g.name.trim())) return showToast('请至少为一个要点命名');
   if (!answer) return showToast('请组织完整答案');
+  const btn = $('#btnSubmit');
+  if (btn) { btn.disabled = true; btn.textContent = 'AI 复盘中…'; }
+  try {
+    const names = groups.map(g => g.name).join('、');
+    const selectedFacts = selected.map(i => (q.slices[i]||{}).text||'').join('；');
+    const wrong = D.wrongBook?.[q.id];
 
-  // 快照本题错题状态：「重新作答」撤回答案时连同错题本一起还原
+    $('#summaryMode').classList.add('hidden');
+    $('#compareMode').classList.remove('hidden');
+    $('#compareMode').innerHTML = '<div class="verdict"><span class="skel" style="width:60%"></span><span class="skel" style="width:96%"></span></div>';
+
+    const prompt = `你是申论错题复盘教练。用户正在复盘一道错题，已走完完整作答流程。\n题目：${q.prompt||''}\n题型：${q.type||''}\n采分点：${(q.points||[]).length ? (q.points||[]).map((p,i)=>`${i}：${p.name||''}`).join('；') : '本题未提供明确采分点，请根据题目和材料自行判断'}\n本题错因：${(wrong?.reasons||[]).join('、')||'未记录'}\n用户圈出的事实：${selectedFacts}\n上位概括词：${names}\n完整答案：${answer}\n\n请结合错因，逐条分析用户的选点、概括和答案，指出哪些做得好、哪些仍受错因影响，给出具体的改进建议。返回严格 JSON：{"review":"总体复盘评价（2-3句话）","analysis":[{"aspect":"选点/概括/表达","detail":"具体分析","suggestion":"改进建议"}],"suggestion":"下一步练习建议"}`;
+
+    const raw = await callAI(
+      [{ role:'system', content: AI_SYSTEM_BASE + ' 你是错题复盘教练，只返回 JSON，所有说明使用简体中文。' },
+       { role:'user', content: prompt }],
+      true, { task: 'review' }
+    );
+    const result = parseJSON(raw);
+
+    const analysisHtml = (result.analysis || []).map(a =>
+      `<div class="fb-detail"><span class="fb-tag fb-ok">${esc(a.aspect||'')}</span>${esc(a.detail||'')}${a.suggestion ? `<br><span style="color:var(--dai);font-size:.85em">建议：${esc(a.suggestion)}</span>` : ''}</div>`
+    ).join('');
+
+    $('#compareMode').innerHTML = `<div class="verdict"><div class="verdict-head"><div class="verdict-eyebrow">错题复盘 · 结合错因分析</div></div><div class="layer-list"><div class="layer-item"><div class="layer-title">总体评价</div><div class="layer-subtitle">${esc(result.review||'')}</div></div><div class="layer-item"><div class="layer-title">逐条分析</div><div class="layer-subtitle">${analysisHtml || '<div class="fb-detail">未返回逐条分析</div>'}</div></div></div>${result.suggestion ? `<div class="fb-detail" style="margin-top:8px">下一步建议：${esc(result.suggestion)}</div>` : ''}<div class="verdict-grid"><figure class="verdict-col"><figcaption>你的答案<span class="fig-en">YOURS</span></figcaption><div class="verdict-text user grid-paper">${esc(answer)}</div></figure><figure class="verdict-col"><figcaption>参考答案<span class="fig-en">REFERENCE</span></figcaption><div class="verdict-text ref">${esc(q.ref)}</div></figure></div><div class="action-row"><button class="btn btn-ink" id="btnSummaryNext" type="button">下一题 -></button></div></div>`;
+
+    const rec = { id: Date.now()+Math.random(), date: new Date().toISOString(), mode:'online', trainingType:'wrongBookReview', question: q, userAnswer: answer, summaryNames: names, selectedSentences: selected, score: null, aiScore: null, selfRating: null, summaryFeedback: [], summaryStats: null };
+    pushHistory(rec); pendingHistoryId = rec.id; flushPersist(); renderSessionStats();
+
+    $('#btnSummaryNext')?.addEventListener('click', () => {
+      if (_appMode === 'wrongBookReview') showSummaryQuestion(true);
+      else showSummaryQuestion();
+    });
+    staggerMarks($('#compareMode'));
+  } catch (e) {
+    $('#summaryMode').classList.remove('hidden');
+    $('#compareMode').classList.add('hidden');
+    sumGoStep(3);
+    showToast('复盘失败：' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = isWrongBookReviewMode() ? '复盘' : '提交'; }
+  }
+}
+
+async function submitSummary() {
+  if (!currentQ) { showToast('题目未备，请稍候或刷新'); return; }
+  if (!getApiConfig()) { showToast('请先在设置中配置 AI 接口'); openDrawer(); return; }
+  const q = currentQ;
+  if (isWrongBookReviewMode()) return submitWrongBookReview(q);
+  const answer = $('#answerInput').value.trim();
+  const selected = sumSelectedSlices();
+  const groups = readSumGroups();
+  if (!selected.length) return showToast('先圈出支撑答案的事实');
+  if (!groups.length || !groups.some(g => g.name.trim())) return showToast('请至少为一个要点命名');
+  if (!answer) return showToast('请组织完整答案');
   _pendingWrongBook = { qId: q.id, prev: (D.wrongBook && D.wrongBook[q.id]) ? { ...D.wrongBook[q.id] } : null };
-
-  // AI mode
-  let degraded = false;
-  if (!forceOffline && D.settings.mode === 'online' && getApiConfig()) {
-    try {
-      return await aiAssessSummary(q, selected, groups.map(g => g.name).join('、'), answer);
-    } catch (e) {
-      showToast('AI 批改失败，已降级为离线对照：' + e.message);
-      degraded = true;
-    }
-  } else if (!forceOffline && !degraded) {
-    const hasApi = !!getApiConfig();
-    if (D.settings.mode !== 'online' && hasApi) showToast('当前为离线模式，到「设置」切换 AI 陪练即可启用批改');
-    else if (D.settings.mode === 'online' && !hasApi) showToast('API 配置不完整，已降级为离线对照');
+  try {
+    await aiAssessSummary(q, selected, groups.map(g => g.name).join('、'), answer);
+  } catch (e) {
+    $('#summaryMode').classList.remove('hidden');
+    $('#compareMode').classList.add('hidden');
+    sumGoStep(3);
+    showToast('AI 批改失败，已保留当前答案，请重试：' + e.message);
   }
+  return;
 
-  // Offline assessment: only compare objective selection and grouping results.
-  // Free-text semantic quality belongs to AI mode; offline mode shows the answer key.
-  const r = assessSummary(q, selected, groups, answer);
-  const validTotal = r.validIdx.length;
-  const namedOk = r.nameResults.filter(n => n.level === 'exact').length;
-  const levelTag = { exact: ['fb-ok', '准确'], partial: ['fb-partial', '事实层'], uncertain: ['fb-uncertain', '待对照'], miss: ['fb-miss', '未命名'] };
-
-  // 01 找点
-  let factSummary = '';
-  const factDetails = [];
-  if (!r.missed.length && !r.wrong.length) {
-    factSummary = `<div class="fb-detail fb-ok">✓ ${validTotal} 处有效信息全部勾中，没被干扰项带偏。</div>`;
-  } else {
-    factSummary = `<div class="fb-stat">勾中 ${r.hit.length}/${validTotal} 处有效信息${r.wrong.length ? `，误选 ${r.wrong.length} 处干扰` : ''}${r.missed.length ? `，漏 ${r.missed.length} 处` : ''}</div>`;
-    r.wrong.forEach(i => { factDetails.push(`<div class="fb-detail"><span class="fb-tag fb-wrong">误选</span>「${esc(q.slices[i].text)}」——${esc(q.slices[i].reason)}。</div>`); });
-    r.missed.forEach(i => { factDetails.push(`<div class="fb-detail"><span class="fb-tag fb-miss">漏选</span>「${esc(q.slices[i].text)}」——它支撑「${esc(q.points[q.slices[i].point].name)}」。</div>`); });
-  }
-  const factHtml = factSummary + collapsible(factDetails, 3);
-
-  // 02 归类·命名
-  const nameRows = r.nameResults.map(nr => {
-    const [cls, label] = levelTag[nr.level];
-    const un = nr.userName || '（未填）';
-    const note = nr.grouped ? '' : ' <i class="nt-note">未归组</i>';
-    return `<div class="nt-row"><span class="fb-tag ${cls}">${label}</span><span class="nt-ref">「${esc(nr.point.name)}」</span><span class="nt-user">「${esc(un)}」${note}</span></div>`;
-  }).join('');
-
-  // 03 搭建链
-  const chainHtml = q.buildChain.map((c, i) =>
-    `<div class="chain-row"><div class="chain-facts"><span class="cf-tag">材料事实</span>${c.facts.map(esc).join('；')}</div><div class="chain-arrow">→</div><div class="chain-cat">${esc(c.cat)}</div></div>`).join('') +
-    `<div class="chain-final"><span class="cf-tag">组成完整答案</span><p>${esc(q.ref)}</p></div>`;
-
-  // 04 答案对照
-  const answerCompare = `<div class="fb-detail">离线模式不判断同义表达、字数或规范程度，请把你的答案与参考答案并排对照。</div>`;
-
-  // Render to #compareMode
-  $('#summaryMode').classList.add('hidden');
-  $('#compareMode').classList.remove('hidden');
-  $('#compareMode').innerHTML = `
-    <div class="verdict">
-      <div class="verdict-head">
-        <div class="verdict-eyebrow">${degraded ? '离线对照 · AI 失败降级' : '离线答案对照 · 题库预设 · 非 AI 批改'}</div>
-        <div class="score-head">
-          <div class="offline-overview">
-            <div class="ov-row"><span class="ov-k">找点</span><span class="ov-v">${r.hit.length}/${validTotal} 处有效${r.wrong.length ? ' · 误选 ' + r.wrong.length : ''}</span></div>
-            <div class="ov-row"><span class="ov-k">命名</span><span class="ov-v">${namedOk}/${q.points.length} 准确</span></div>
-          </div>
-          <div class="score-copy"><div class="verdict-title">对照参考答案</div><div class="verdict-lede">离线模式只核对找点与归类命名；完整答案请自行与参考答案比较。</div></div>
-        </div>
-      </div>
-    </div>
-    <div class="layer-list">
-      <div class="layer-item ${!r.missed.length && !r.wrong.length ? 'good' : 'warn'}"><div class="layer-title">找点</div><div class="layer-copy">${factHtml}</div></div>
-      <div class="layer-item ${namedOk === q.points.length ? 'good' : 'warn'}"><div class="layer-title">归类 · 命名</div><div class="layer-copy"><div class="nt-row nt-head"><span>评价</span><span>参考要点</span><span>你的概括</span></div>${nameRows}</div></div>
-      <div class="layer-item good"><div class="layer-title">参考答案是怎么搭出来的</div><div class="layer-copy">${chainHtml}</div></div>
-      <div class="layer-item good"><div class="layer-title">答案对照</div><div class="layer-copy">${answerCompare}</div></div>
-    </div>
-    <div class="verdict-grid">
-      <figure class="verdict-col"><figcaption>你的答案<span class="fig-en">YOURS</span></figcaption><div class="verdict-text user grid-paper">${esc(answer)}</div></figure>
-      <figure class="verdict-col"><figcaption>参考答案<span class="fig-en">REFERENCE</span></figcaption><div class="verdict-text ref">${esc(q.ref)}</div></figure>
-    </div>
-    <div class="action-row"><button class="btn btn-text" id="btnSummaryRetry" type="button">重新作答</button><button class="btn btn-ink" id="btnSummaryNext" type="button">下一题 →</button></div>`;
-  staggerMarks($('#compareMode'));
-
-  // Record history（离线画像所需：找点命中/命名准确/误选与干扰项总数，旧记录缺字段时画像统计会自动跳过）
-  const summaryStats = { facts: [r.hit.length, validTotal], names: [namedOk, q.points.length], wrong: r.wrong.length, distractorTotal: r.distractorIdx.length }; 
-
-  const rec = { id: Date.now() + Math.random(), date: new Date().toISOString(), mode: 'offline', trainingType: 'summary', question: q, userAnswer: answer, summaryNames: groups.map(g => g.name).join('、'), selectedSentences: selected, score: null, aiScore: null, selfRating: null, summaryFeedback: [{ title: '找点', ok: !r.missed.length && !r.wrong.length }, { title: '命名', ok: namedOk === q.points.length }, { title: '答案对照', ok: null }], summaryStats };
-  pushHistory(rec); pendingHistoryId = rec.id; flushPersist(); renderSessionStats();
-
-  // ── 错题本更新（离线路径）──
-  const isWrong = r.missed.length > 0 || r.wrong.length > 0 || namedOk < q.points.length;
-  updateWrongBook(q.id, isWrong, isWrong ? [
-    r.missed.length ? '漏选事实' : '',
-    r.wrong.length ? '误选干扰' : '',
-    namedOk < q.points.length ? '命名不准' : '',
-  ].filter(Boolean) : []);
-
-  $('#btnSummaryNext').focus({ preventScroll: true });
 }
 
 // ============================================================
@@ -4125,7 +4315,7 @@ function renderSignalText(text) {
 // ============================================================
 // PROVIDER PRESETS & API HELPERS
 // ============================================================
-const AI_SYSTEM_BASE = '你是公文写作与规范表达辅导专家。你的回复必须是且仅是一个合法的 JSON 对象，不要包含任何 markdown、代码块标记、解释文字或前后缀。直接以 { 开头，以 } 结尾。';
+const AI_SYSTEM_BASE = '你是公文写作与规范表达辅导专家。你的回复必须是且仅是一个合法的 JSON 对象，不要包含任何 markdown、代码块标记、解释文字或前后缀。直接以 { 开头，以 } 结尾。重要：只输出纯 JSON 数据，不要添加任何说明文字、注释或 markdown 标记。确保 JSON 完整，不要截断。';
 
 const PROVIDERS = {
   deepseek:    { name: 'DeepSeek',       baseUrl: 'https://api.deepseek.com/v1',           models: ['deepseek-chat','deepseek-reasoner'] },
@@ -4137,6 +4327,34 @@ const PROVIDERS = {
   siliconflow: { name: '硅基流动',       baseUrl: 'https://api.siliconflow.cn/v1',          models: ['deepseek-ai/DeepSeek-V3','Qwen/Qwen2.5-72B-Instruct','THUDM/glm-4-9b-chat'] },
   custom:      { name: '自定义',         baseUrl: '',                                        models: [] }
 };
+
+const MODEL_META = {
+  'deepseek-chat':     { contextWindow: 64000, maxOutput: 8192 },
+  'deepseek-reasoner': { contextWindow: 64000, maxOutput: 8192 },
+  'gpt-4o-mini':       { contextWindow: 128000, maxOutput: 16384 },
+  'gpt-4o':            { contextWindow: 128000, maxOutput: 16384 },
+  'gpt-4-turbo':       { contextWindow: 128000, maxOutput: 4096 },
+  'gpt-3.5-turbo':     { contextWindow: 16385, maxOutput: 4096 },
+  'glm-4-flash':       { contextWindow: 128000, maxOutput: 4096 },
+  'glm-4-air':         { contextWindow: 128000, maxOutput: 4096 },
+  'glm-4':             { contextWindow: 128000, maxOutput: 4096 },
+  'glm-4-long':        { contextWindow: 1000000, maxOutput: 4096 },
+  'moonshot-v1-8k':    { contextWindow: 8000, maxOutput: 4096 },
+  'moonshot-v1-32k':   { contextWindow: 32000, maxOutput: 4096 },
+  'moonshot-v1-128k':  { contextWindow: 128000, maxOutput: 4096 },
+  'qwen-turbo':        { contextWindow: 128000, maxOutput: 8192 },
+  'qwen-plus':         { contextWindow: 128000, maxOutput: 8192 },
+  'qwen-max':          { contextWindow: 32000, maxOutput: 8192 },
+  'qwen-long':         { contextWindow: 1000000, maxOutput: 6000 },
+  'doubao-pro-32k':    { contextWindow: 32000, maxOutput: 4096 },
+  'doubao-lite-32k':   { contextWindow: 32000, maxOutput: 4096 },
+  'deepseek-ai/DeepSeek-V3':    { contextWindow: 64000, maxOutput: 8192 },
+  'Qwen/Qwen2.5-72B-Instruct': { contextWindow: 32768, maxOutput: 4096 },
+  'THUDM/glm-4-9b-chat':        { contextWindow: 32768, maxOutput: 4096 },
+};
+function getModelMeta(modelName) {
+  return MODEL_META[modelName] || { contextWindow: 128000, maxOutput: 16384 };
+}
 
 function normalizeBaseUrl(url) {
   if (!url) return '';
@@ -4180,21 +4398,37 @@ function getApiConfig() {
     apiKey: s.apiKey,
     model,
     temperature: typeof s.temperature === 'number' ? s.temperature : 0.7,
-    maxTokens: typeof s.maxTokens === 'number' ? s.maxTokens : 2000
+    maxTokens: typeof s.maxTokens === 'number' ? s.maxTokens : 16384
   };
 }
 
-async function callAI(messages, jsonMode = true) {
+const AI_TASK_DEFAULTS = {
+  default: { maxTokens: 3072, timeoutMs: 45000 },
+  question: { maxTokens: 2400, timeoutMs: 45000 },
+  material: { maxTokens: 4096, timeoutMs: 75000 },
+  review: { maxTokens: 1800, timeoutMs: 45000 }
+};
+
+async function callAI(messages, jsonMode = true, options = {}) {
   const cfg = getApiConfig();
+  const meta = getModelMeta(cfg ? cfg.model : '');
+  const profile = AI_TASK_DEFAULTS[options.task] || AI_TASK_DEFAULTS.default;
+  const requestedMaxTokens = Number(options.maxTokens) > 0 ? Number(options.maxTokens) : profile.maxTokens;
+  const requestMaxTokens = Math.min(requestedMaxTokens, meta.maxOutput || profile.maxTokens);
+  const requestTimeoutMs = Number(options.timeoutMs) > 0
+    ? Math.min(Number(options.timeoutMs), 120000)
+    : profile.timeoutMs;
   if (!cfg) throw new Error('API 未配置，请先在设置中选择提供商并填写 API Key');
   const url = apiUrl(cfg.baseUrl, 'chat/completions');
+  const t0 = Date.now();
+  console.log(`[AI] → 请求开始 | 模型=${cfg.model} | maxTokens=${requestMaxTokens} | 超时=${Math.round(requestTimeoutMs/1000)}s | jsonMode=${jsonMode} | 消息数=${messages.length}`);
 
   async function attempt(msgs, useJsonMode) {
     const body = {
       model: cfg.model,
       messages: msgs,
       temperature: cfg.temperature,
-      max_tokens: cfg.maxTokens
+      max_tokens: requestMaxTokens
     };
     if (useJsonMode) body.response_format = { type: 'json_object' };
     try {
@@ -4202,14 +4436,15 @@ async function callAI(messages, jsonMode = true) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cfg.apiKey}` },
         body: JSON.stringify(body),
-        signal: timeoutSignal(30000)
+        signal: timeoutSignal(requestTimeoutMs)
       });
     } catch (netErr) {
-      throw new Error(diagnoseFetchError(netErr, cfg.baseUrl));
+      throw new Error(diagnoseFetchError(netErr, cfg.baseUrl, requestTimeoutMs));
     }
   }
 
   let resp = await attempt(messages, jsonMode);
+  console.log(`[AI] ← 响应 | HTTP ${resp.status} | 耗时=${((Date.now()-t0)/1000).toFixed(1)}s`);
 
   if (jsonMode && !resp.ok && resp.status === 400) {
     let errDetail = '';
@@ -4228,7 +4463,7 @@ async function callAI(messages, jsonMode = true) {
   if (!resp.ok && RETRYABLE.includes(resp.status)) {
     for (let retry = 1; retry <= 2; retry++) {
       const delay = retry * 1500; // 1.5s, 3s
-      console.warn(`[callAI] HTTP ${resp.status}，${delay}ms 后第 ${retry} 次重试…`);
+      console.warn(`[AI] ⚠ HTTP ${resp.status}，${delay}ms 后第 ${retry} 次重试…`);
       await new Promise(r => setTimeout(r, delay));
       resp = await attempt(messages, jsonMode);
       if (resp.ok || !RETRYABLE.includes(resp.status)) break;
@@ -4254,11 +4489,20 @@ async function callAI(messages, jsonMode = true) {
   }
   const data = await resp.json();
   let content = data.choices?.[0]?.message?.content;
-  if (!content) throw new Error('API 返回格式异常：缺少 choices[0].message.content');
+  // fallback: 某些非标准提供商可能用不同结构
+  if (!content) {
+    content = data.output?.text || data.output?.choices?.[0]?.message?.content
+           || data.result || data.data?.choices?.[0]?.message?.content || '';
+  }
+  if (!content) {
+    console.warn('[AI] ⚠ API 响应数据:', JSON.stringify(data).slice(0, 500));
+    const keys = Object.keys(data).join(', ');
+    throw new Error(`API 返回格式异常：缺少 choices[0].message.content（实际顶层字段：${keys}）。请检查 API 配置或换用其他模型。`);
+  }
 
   // 切语言自动重试（仅 JSON 模式）
   if (jsonMode && isEnglishLeak(content)) {
-    console.warn('[callAI] English leak detected, retrying with stronger Chinese force...');
+    console.warn('[AI] ⚠ 检测到英文泄漏，正在用更强中文约束重试…');
     const strongerMessages = messages.map(m =>
       m.role === 'system'
         ? { ...m, content: m.content + '\n\n⚠ 再次以最强约束提示：所有 string 字段值（含 comment / suggestion / reason / overall / focus / hint 等所有 human-readable 字段）必须 100% 使用简体中文，禁止出现任何英文字符、英文短语、英文术语或拼音。如需表达概念，必须使用对应的中文表述。' }
@@ -4273,15 +4517,32 @@ async function callAI(messages, jsonMode = true) {
       } catch {}
     }
   }
+  console.log(`[AI] ✓ 完成 | 总耗时=${((Date.now()-t0)/1000).toFixed(1)}s | 内容长度=${content.length}字符`);
   return content;
 }
 
 function isEnglishLeak(text) {
-  const s = String(text || '');
+  let s = String(text || '');
+  // JSON 字段名通常是英文，先排除 key，避免把 answerStructure/buildChain 误判成英文泄漏。
+  s = s.replace(/"(?:[^"\\]|\\.)*"\s*:/g, '');
   const cnCount = (s.match(/[一-龥]/g) || []).length;
   const enLongCount = (s.match(/[A-Za-z]{5,}/g) || []).length;
   if (cnCount < 10) return false;
   return enLongCount >= 2;
+}
+
+async function callAIJson(messages, retryInstruction = '', options = {}) {
+  let lastError = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const request = attempt === 0 || !retryInstruction
+      ? messages
+      : [...messages, { role: 'user', content: retryInstruction }];
+    if (attempt > 0) console.warn(`[AI] ⚠ JSON 解析失败，第 ${attempt + 1} 次尝试…`);
+    const raw = await callAI(request, true, options);
+    try { return parseJSON(raw); }
+    catch (e) { lastError = e; console.warn(`[AI] ⚠ JSON 解析错误: ${e.message}`); }
+  }
+  throw new Error('AI 返回的 JSON 不完整或无法解析，请重试。' + (lastError?.message ? `（${lastError.message}）` : ''));
 }
 
 function parseJSON(resp) {
@@ -4308,14 +4569,45 @@ function parseJSON(resp) {
   try { return JSON.parse(fixed); } catch {}
   fixed = fixed.replace(/("(?:[^"\\]|\\.)*")|(\n|\r)/g, (match, str, nl) => str ? str : ' ');
   try { return JSON.parse(fixed); } catch {}
+  // 3a. 截断修复：统计字符串外的括号，补全缺失的闭合括号
+  function countUnquotedBrackets(s) {
+    let open = 0, close = 0, openSq = 0, closeSq = 0, inStr = false, esc = false;
+    for (let i = 0; i < s.length; i++) {
+      const c = s[i];
+      if (esc) { esc = false; continue; }
+      if (c === '\\') { if (inStr) { esc = true; } continue; }
+      if (c === '"') { inStr = !inStr; continue; }
+      if (inStr) continue;
+      if (c === '{') open++;
+      else if (c === '}') close++;
+      else if (c === '[') openSq++;
+      else if (c === ']') closeSq++;
+    }
+    return { open, close, openSq, closeSq, inStr };
+  }
+  const truncated = countUnquotedBrackets(fixed);
+  let repaired = fixed;
+  if (truncated.inStr) repaired += '"';  // 先闭合未结束的字符串
+  if (truncated.openSq > truncated.closeSq) repaired += ']'.repeat(truncated.openSq - truncated.closeSq);
+  if (truncated.open > truncated.close) repaired += '}'.repeat(truncated.open - truncated.close);
+  if (repaired !== fixed) {
+    try { return JSON.parse(repaired); } catch {}
+  }
+  // 3d. 截断检测：括号不匹配时给出更具体的错误提示
+  const isTruncated = truncated.open !== truncated.close || truncated.openSq !== truncated.closeSq;
   console.warn('[parseJSON] All strategies failed. Raw response:', resp.slice(0, 800));
+  if (isTruncated) {
+    throw new Error('AI 返回内容被截断，可能受模型输出长度限制。请尝试换用其他模型或增大 max_tokens 配置后重试。');
+  }
   throw new Error('AI 返回内容无法解析为 JSON，请重试');
 }
 
-function diagnoseFetchError(err, baseUrl) {
+function diagnoseFetchError(err, baseUrl, timeoutMs = 60000) {
   const raw = (err && err.message) ? err.message : String(err || '');
+  console.error(`[AI] ✗ 网络错误 | name=${err?.name} | message=${raw} | baseUrl=${baseUrl}`);
   if (err && (err.name === 'TimeoutError' || err.name === 'AbortError')) {
-    return `AI 请求超过 30 秒无响应，已主动断开。\n\n可能原因：\n• 网络/代理到 ${baseUrl} 的链路不通\n• 服务方当前负载过高\n• VPN 或防火墙拦截了长连接`;
+    const timeoutSeconds = Math.round(timeoutMs / 1000);
+    return `AI 请求超过 ${timeoutSeconds} 秒无响应，已主动断开。\n\n可能原因：\n• 网络/代理到 ${baseUrl} 的链路不通\n• 服务方当前负载过高\n• VPN 或防火墙拦截了长连接`;
   }
   if (location.protocol === 'file:') {
     return `当前通过 file:// 协议打开页面，浏览器禁止该协议下发起跨域网络请求，所以请求根本没发出去。\n\n解决方法：起一个本地 HTTP server 后再用 http:// 访问。\n\n最简方式（任选其一）：\n• 在 HTML 所在目录运行：python -m http.server 8080，然后访问 http://localhost:8080\n• 或运行：npx http-server -p 8080，同样访问 http://localhost:8080`;
@@ -4395,7 +4687,7 @@ function showOfflineCompare(q, userAnswer) {
     <div class="verdict">
       <div class="verdict-head">
         <div class="verdict-eyebrow">离线对照</div>
-        <div class="score-copy">
+        <div class="score-text">
           <div class="verdict-title" style="font-size:17px">先看你漏掉了什么</div>
           <div class="verdict-lede">不必追求与参考一字不差——先找出原句里最需要被命名的意思。</div>
         </div>
@@ -4496,11 +4788,6 @@ function recordSelfRating(q, star) {
 // 摸底测试（5 题）
 // ============================================================
 async function startLevelTest() {
-  if (D.settings.mode !== 'online') {
-    showToast('需先切换为 AI 陪练模式');
-    openDrawer();
-    return;
-  }
   if (!getApiConfig()) {
     showToast('需先配置 API');
     openDrawer();
@@ -4595,17 +4882,14 @@ keyPoints：["『搞过一阵子』→『开展专项探索』","『轰轰烈烈
   try {
     for (let attempt = 0; attempt < 3; attempt++) {
       if (attempt > 0) msgs.push({role:'user', content:'上一次题目未通过质量校验（' + lastErr + '），请严格按题型与字数重新出题：口语原句 60-180 字、keyPoints ≥ 3 条且具体、不得英文/拼音。'});
-      const resp = await callAI(msgs);
+      const resp = await callAI(msgs, true, { task: 'question' });
       const q = parseJSON(resp);
       const cand = normalizeTestQuestion(q);
       const v = validateQuestion(cand);
       if (v.ok) { norm = cand; break; }
       lastErr = v.reasons.join('；');
     }
-    if (!norm) {
-      norm = normalizeTestQuestion(pickQuestion());
-      showToast('AI 出题质量不达标，本题改用题库题', 4000);
-    }
+    if (!norm) throw new Error('AI 出题质量连续 3 次未达标：' + lastErr);
     testQuestions.push(norm);
     $('#testContext').textContent = norm.context || '';
     $('#testOral').textContent = norm.oral || '';
@@ -4734,9 +5018,7 @@ async function aiSubmitAnswer(userAnswer) {
   } catch(e) {
     showToast('AI 批改失败：' + e.message);
     console.error('aiSubmitAnswer error:', e);
-    // 批改失败回退到离线对照，先落盘防止丢失，再让用户自评
-    recordOfflineResult(currentQ, userAnswer, null);
-    showOfflineCompare(currentQ, userAnswer);
+    // AI-only 模式不生成离线替代结果，保留用户答案等待重试。
   } finally {
     $('#btnRewriteSubmit').disabled = false; $('#btnRewriteSubmit').textContent = '提交';
   }
@@ -4861,17 +5143,46 @@ function rollbackProfileResult(hid) {
   recomputeProfileWindow();
 }
 
-// 近段 vs 前段均分对比（窗口 ≥8 条才显示，避免早期噪声）
+// 逐维度趋势：前半 vs 后半均值差，仅展示变化 ≥0.5 的维度（窗口 ≥5 条）
 function profileTrend(recent) {
-  if (!Array.isArray(recent) || recent.length < 8) return '';
+  if (!Array.isArray(recent) || recent.length < 5) return '';
   const lastN = Math.min(10, Math.floor(recent.length / 2));
   const last = recent.slice(-lastN), prev = recent.slice(0, -lastN).slice(-10);
-  const avgOf = arr => { const v = arr.map(r => Number(r.score)).filter(Number.isFinite); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : NaN; };
-  const a = avgOf(last), b = avgOf(prev);
-  if (!Number.isFinite(a) || !Number.isFinite(b)) return '';
-  const d = Math.round((a - b) * 10) / 10;
-  if (Math.abs(d) < 0.1) return `近 ${lastN} 题均分 ${a.toFixed(1)}，与前 ${prev.length} 题持平`;
-  return `近 ${lastN} 题均分 ${a.toFixed(1)}，较前 ${prev.length} 题 ${d > 0 ? '<span class="up">↑' + d + '</span>' : '<span class="down">↓' + Math.abs(d) + '</span>'}`;
+  if (!prev.length) return '';
+
+  // 检查是否有维度数据
+  const hasDims = recent.some(r => r.dims && typeof r.dims === 'object' && Object.keys(r.dims).length > 0);
+
+  if (!hasDims) {
+    // 回退到总分比较（兼容旧记录）
+    const avgOf = arr => {
+      const v = arr.map(r => Number(r.score)).filter(Number.isFinite);
+      return v.length ? v.reduce((a, b) => a + b, 0) / v.length : NaN;
+    };
+    const a = avgOf(last), b = avgOf(prev);
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return '';
+    const d = Math.round((a - b) * 10) / 10;
+    if (Math.abs(d) < 0.1) return `近${lastN}题均分${a.toFixed(1)}，与前${prev.length}题持平`;
+    const arrow = d > 0 ? '<span class="up">↑' + d + '</span>' : '<span class="down">↓' + Math.abs(d) + '</span>';
+    return `近${lastN}题均分${a.toFixed(1)}，较前${prev.length}题${arrow}`;
+  }
+
+  const avgOf = (arr, dim) => {
+    const v = arr.map(r => dimScoreOf(r.dims && r.dims[dim])).filter(Number.isFinite);
+    return v.length ? v.reduce((a, b) => a + b, 0) / v.length : NaN;
+  };
+  const parts = [];
+  PROFILE_DIMS.forEach(dim => {
+    const a = avgOf(last, dim), b = avgOf(prev, dim);
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return;
+    const d = Math.round((a - b) * 10) / 10;
+    if (Math.abs(d) < 0.5) return;
+    const cls = d > 0 ? 'up' : 'down';
+    const arrow = d > 0 ? '↑' : '↓';
+    parts.push(`${dim} <span class="${cls}">${arrow}${Math.abs(d)}</span>`);
+  });
+  if (!parts.length) return '各维度基本持平';
+  return parts.join(' · ');
 }
 
 function animateScore(el, target) {
@@ -4930,7 +5241,7 @@ function showOnlineCompare(q, userAnswer, result) {
         <div class="verdict-eyebrow">AI 批改 · ${esc(modelName)}</div>
         <div class="score-head">
           <div class="score-circle"><svg class="score-ring" viewBox="0 0 92 70" aria-hidden="true"><path d="M10 40 C5 22 28 7 48 8 C72 9 89 24 85 41 C81 58 57 66 39 63 C19 60 3 56 10 40 Z"/></svg><span class="score-num"><span class="score-value" data-score="${scoreVal}">0</span><span class="score-max">/ 10</span></span></div>
-          <div class="score-copy">
+          <div class="score-text">
             <div class="verdict-title" style="font-size:17px">${esc(result.overallComment || '批改完成')}</div>
             <div class="band-tag">${scoreBand(scoreVal).label}档 · ${scoreBand(scoreVal).desc}</div>
           </div>
@@ -5003,11 +5314,8 @@ function renderSessionStats() {
 function scanText() {
   const text = $('#scanInput').value.trim();
   if (!text) { showToast('请先粘贴段落'); return; }
-  if (D.settings.mode === 'online' && getApiConfig()) {
-    aiScanText(text);
-    return;
-  }
-  renderScanResult(text, offlineScan(text), { source: '词库' });
+  if (!getApiConfig()) { showToast('请先在设置中配置 AI 接口'); openDrawer(); return; }
+  aiScanText(text);
 }
 
 function showScanSkeleton() {
@@ -5050,9 +5358,8 @@ ${text}
       formalScore: Number.isFinite(fs) ? fs : null
     });
   } catch(e) {
-    showToast('AI 检查未成：' + e.message + '，已改用词库');
+    showToast('AI 检查未成，未生成离线替代结果：' + e.message);
     console.error('aiScanText error:', e);
-    renderScanResult(text, offlineScan(text), { source: '词库' });
   }
   btn.disabled = false; btn.innerHTML = '检查<span class="kbd">Ctrl+↵</span>';
 }
@@ -5461,8 +5768,7 @@ async function deleteHistoryRecord(id, kind) {
 // 模式信息 / 提示条
 // ============================================================
 function renderPracticeMeta() {
-  const online = (D.settings.mode || 'offline') === 'online';
-  $('#practiceModeLabel').textContent = online ? 'AI 陪练 · 提交后批改' : '先读懂，再压缩成一句';
+  $('#practiceModeLabel').textContent = 'AI 陪练 · 题目与批改均由 AI 完成';
   const summary = getTrainingMode() === 'summary';
   $$('#trainingSwitch .seg-btn').forEach(b => {
     const on = b.dataset.training === (summary ? 'summary' : 'rewrite');
@@ -5472,24 +5778,13 @@ function renderPracticeMeta() {
 }
 
 function renderModeInfo() {
-  const mode = D.settings.mode || 'offline';
   const api = loadApiSettings();
-  const hasApi = !!(api.provider && api.apiKey);
   const cfg = getApiConfig();
-  let html = '';
-  if (mode === 'online') {
-    if (cfg) {
-      html = `<p class="drawer-note">当前：<strong style="color:var(--ink)">AI 陪练</strong> · ${esc(cfg.model)}（${PROVIDERS[api.provider]?.name || esc(api.provider)}）</p>`;
-      if (!D.profile) html += '<p class="drawer-note" style="color:var(--zhu)">提示：做题后画像自动积累；也可到「记录 · 能力画像」做 5 题摸底快速建立。</p>';
-    } else {
-      html = '<p class="drawer-note" style="color:var(--zhu)">AI 陪练尚未就绪：请在下方选择提供商并填写 API Key，然后「测试连接」。</p>';
-    }
-  } else {
-    html = '<p class="drawer-note">当前：<strong style="color:var(--ink)">离线自练</strong> · 题库对照 + 自评掌握度</p>';
-    if (hasApi) html += '<p class="drawer-note">已配置 API，保存时切换为 AI 陪练即可启用出题与批改。</p>';
-  }
+  let html = cfg
+    ? `<p class="drawer-note">当前：<strong style="color:var(--ink)">AI 陪练</strong> · ${esc(cfg.model)}（${PROVIDERS[api.provider]?.name || esc(api.provider)}）</p>`
+    : '<p class="drawer-note" style="color:var(--zhu)">AI 陪练尚未就绪：请在下方选择提供商并填写 API Key，然后「测试连接」。</p>';
   if (location.protocol === 'file:') {
-    html += '<p class="drawer-note" style="color:var(--gold)">当前以 file:// 直接打开：题库练习不受影响，但 AI 请求可能被浏览器拦截。建议用「启动规范练习.bat」以 localhost 打开。</p>';
+    html += '<p class="drawer-note" style="color:var(--gold)">当前以 file:// 直接打开：AI 请求可能被浏览器拦截。建议用「启动规范练习.bat」以 localhost 打开。</p>';
   }
   $('#modeInfo').innerHTML = html;
   renderPracticeMeta();
@@ -5499,14 +5794,28 @@ function renderPracticeTip() {
   const tip = $('#practiceTip');
   if (!tip) return;
   if (isTestMode) { tip.classList.add('hidden'); return; }
-  if (getTrainingMode() === 'summary') { tip.classList.add('hidden'); return; }
-  if (D.settings.mode !== 'online') { tip.classList.add('hidden'); return; }
+  if (getTrainingMode() === 'summary') {
+    const cfg = getApiConfig();
+    const hasMaterials = loadUserMaterials().some(m => m.status === 'ready' && m.provenance?.userConfirmed);
+    if (!cfg || !hasMaterials) {
+      const parts = [];
+      if (!cfg) parts.push('在「<a style="color:var(--zhu);cursor:pointer;text-decoration:underline;text-underline-offset:3px" id="tipGoSettings">设置</a>」配置 AI 接口');
+      if (!hasMaterials) parts.push('在「<a style="color:var(--zhu);cursor:pointer;text-decoration:underline;text-underline-offset:3px" id="tipGoArchive">我的材料</a>」导入材料');
+      tip.innerHTML = `<span class="tip-msg"><b>请先配置接口并导入材料</b>${parts.join('，')}，再开始概括训练。</span><button class="tip-close" id="tipClose" type="button" aria-label="关闭提示">×</button>`;
+      const gs = $('#tipGoSettings'); if (gs) gs.onclick = () => openDrawer();
+      const ga = $('#tipGoArchive'); if (ga) ga.onclick = () => switchTab('materials');
+      tip.classList.remove('hidden');
+    } else {
+      tip.classList.add('hidden');
+    }
+    return;
+  }
   if (!D.profile) {
     const cfg = getApiConfig();
     if (cfg) {
       tip.innerHTML = '<span class="tip-msg"><b>画像将随 AI 批改自动积累</b>直接做题即可；也可做 5 题摸底快速建立初始画像，让出题更早贴合弱项。</span><button class="btn btn-line" id="tipStartTest" type="button">开始摸底</button><button class="tip-close" id="tipClose" type="button" aria-label="关闭提示">×</button>';
     } else {
-      tip.innerHTML = '<span class="tip-msg"><b>AI 陪练尚未就绪</b>当前题目来自内置题库；要用 AI 出题 / 批改 / 检查，请先在「设置」配置 API Key。</span><button class="tip-close" id="tipClose" type="button" aria-label="关闭提示">×</button>';
+      tip.innerHTML = '<span class="tip-msg"><b>AI 陪练尚未就绪</b>规范改写和概括训练都需要 AI 题目与批改，请先在「设置」配置 API Key。</span><button class="tip-close" id="tipClose" type="button" aria-label="关闭提示">×</button>';
     }
     tip.classList.remove('hidden');
   } else {
@@ -5550,7 +5859,7 @@ function openDrawer() {
   const savedModel    = api.model || '';
   const savedBaseUrl  = api.baseUrl || '';
 
-  $('#setMode').value = D.settings.mode || 'offline';
+  $('#setMode').value = 'online';
   $('#setProvider').value = savedProvider;
   $('#setApiKey').value = api.apiKey || '';
   $('#setBaseUrl').value = savedBaseUrl;
@@ -5560,7 +5869,9 @@ function openDrawer() {
   const temp = typeof api.temperature === 'number' ? api.temperature : 0.7;
   $('#setTemperature').value = temp;
   $('#tempVal').textContent = temp;
-  $('#setMaxTokens').value = api.maxTokens || 2000;
+  $('#setMaxTokens').value = api.maxTokens || 16384;
+  const _display = $('#setMaxTokensDisplay');
+  if (_display) _display.textContent = '自动 · 不需设置';
 
   if (savedModel) {
     const option = $('#setModel').querySelector(`option[value="${savedModel}"]`);
@@ -5608,12 +5919,8 @@ function closeDrawer() {
 }
 
 function goToMode(mode) {
-  if (mode === 'online') {
-    switchTab(D.profile ? 'practice' : 'archive');
-  } else {
-    switchTab('practice');
-    if (!isTestMode) showPracticeQuestion();
-  }
+  switchTab('practice');
+  if (!isTestMode) showPracticeQuestion();
 }
 
 function saveSettings() {
@@ -5632,7 +5939,7 @@ function saveSettings() {
   }
   s.baseUrl = normalizeBaseUrl($('#setBaseUrl').value);
   s.temperature = parseFloat($('#setTemperature').value) || 0.7;
-  s.maxTokens = parseInt($('#setMaxTokens').value) || 2000;
+  s.maxTokens = parseInt($('#setMaxTokens').value) || 16384;
   saveApiSettings();
   markDirty(); // mode 变化需保存练习数据
   if ($('#setMode').value === 'online' && !D.profile && D.hasSeenWelcome) {
@@ -5742,7 +6049,7 @@ async function testApiConnection() {
       resultEl.innerHTML = `<span style="color:var(--zhu)">连接失败：${msg}<br><span style="font-size:.75rem;opacity:.8;word-break:break-all">${esc(detail.slice(0,200))}</span></span>`;
     }
   } catch(e) {
-    resultEl.innerHTML = `<div style="color:var(--zhu);text-align:left">${formatDiagnoseResult(diagnoseFetchError(e, baseUrl))}</div>`;
+    resultEl.innerHTML = `<div style="color:var(--zhu);text-align:left">${formatDiagnoseResult(diagnoseFetchError(e, baseUrl, 15000))}</div>`;
   }
   btn.disabled = false; btn.textContent = '测试连接';
 }
@@ -5851,7 +6158,7 @@ async function fetchModels(baseUrl, apiKey, provider, opts = {}) {
     if (auto) { if (hint) hint.innerHTML = `<span style="color:#5c7a4e">${okMsg}，可在上方下拉选择</span>`; }
     else $('#apiTestResult').innerHTML = `<span style="color:#5c7a4e">${okMsg}，可在上方选择</span>`;
   } catch(e) {
-    const diag = diagnoseFetchError(e, baseUrl);
+    const diag = diagnoseFetchError(e, baseUrl, 10000);
     fail(`拉取失败：${diag.split('\n')[0]}`, auto ? `<div style="color:var(--zhu);text-align:left">${formatDiagnoseResult(diag)}</div>` : null);
   }
 }
@@ -5931,7 +6238,7 @@ function reloadAll() {
   refreshFileStatus();
   updateModeStatus();
   renderWrongBookBadge();
-  if (window._resetWrongOnly) window._resetWrongOnly();
+  setAppMode('practice');
   if (D.hasSeenWelcome) $('#welcomeOverlay').classList.remove('open');
 }
 
@@ -5983,22 +6290,23 @@ function initIntro() {
 function initApp() {
   $('#btnTheme').addEventListener('click', toggleTheme);
   // 错题本徽章
-  let _wrongOnly = false;
   $('#wrongBookBadge').addEventListener('click', () => {
-    _wrongOnly = !_wrongOnly;
-    $('#wrongBookBadge').classList.toggle('wrong-only', _wrongOnly);
-    if (_wrongOnly) {
+    const entering = _appMode !== 'wrongBookReview';
+    if (entering) {
       const n = Object.keys(D.wrongBook || {}).length;
-      if (!n) { showToast('错题本是空的，先去做题吧'); _wrongOnly = false; $('#wrongBookBadge').classList.remove('wrong-only'); return; }
-      showToast(`只练错题模式：${n} 道错题`);
+      if (!n) { showToast('错题本是空的，先去做题吧'); return; }
+      setAppMode('wrongBookReview');
+      const stats = getWrongReasonStats();
+      const topReason = stats.length ? stats[0].reason : '';
+      const msg = topReason ? `只练错题模式：${n} 道错题 · 最需关注：${topReason}` : `只练错题模式：${n} 道错题`;
+      showToast(msg);
       showSummaryQuestion(true);
     } else {
+      setAppMode('practice');
       showToast('已退出只练错题模式');
       showSummaryQuestion();
     }
   });
-  window._isWrongOnly = () => _wrongOnly;
-  window._resetWrongOnly = () => { _wrongOnly = false; $('#wrongBookBadge').classList.remove('wrong-only'); };
   // 答题卡字数刻度：右外侧每 100 字一枚（桌面 20 格/行 → 每 5 行一格刻度）
   $$('.grid-scale').forEach(sc => {
     for (let n = 100; n <= 1000; n += 100) {
@@ -6015,20 +6323,18 @@ function initApp() {
   // Welcome
   initIntro();
   $('#welcomeOffline').addEventListener('click', () => {
-    D.settings.mode = 'offline'; D.hasSeenWelcome = true; markDirty();
+    D.settings.mode = 'online'; D.settings.trainingMode = 'rewrite'; D.hasSeenWelcome = true; markDirty();
     $('#welcomeOverlay').classList.remove('open');
     reloadAll();
-    goToMode('offline');
+    switchTab('practice');
+    if (!getApiConfig()) showToast('请先在「设置」中配置 AI 接口');
   });
   $('#welcomeOnline').addEventListener('click', () => {
-    D.settings.mode = 'online'; D.hasSeenWelcome = true; markDirty();
+    D.settings.mode = 'online'; D.settings.trainingMode = 'summary'; D.hasSeenWelcome = true; markDirty();
     $('#welcomeOverlay').classList.remove('open');
     reloadAll();
-    goToMode('online');
-    if (!D.profile) {
-      if (getApiConfig()) showToast('直接做题即可，画像将随批改自动生成；也可到「记录」做 5 题摸底快速建立');
-      else showToast('请先在「设置」中选择提供商并填写 API Key');
-    }
+    switchTab('practice');
+    if (!getApiConfig()) showToast('请先在「设置」中配置 AI 接口');
   });
   $('#welcomeSkip').addEventListener('click', () => {
     D.hasSeenWelcome = true; markDirty();
@@ -6044,7 +6350,14 @@ function initApp() {
   });
 
   // Nav
-  $$('.nav-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+  $$('.nav-btn').forEach(b => b.addEventListener('click', () => { if (b.dataset.tab) switchTab(b.dataset.tab); }));
+  $('.nav-wrong-book').addEventListener('click', () => {
+    switchTab('practice');
+    if (!isWrongBookReviewMode()) {
+      const badge = $('#wrongBookBadge');
+      if (badge) badge.click();
+    }
+  });
 
   // Materials module
   initMaterialsModule();
@@ -6101,18 +6414,26 @@ function initApp() {
     seg.classList.toggle('selected');
     $('#sumSelCount').textContent = String(sumSelectedSlices().length);
   });
-  $('#freeSelectMaterial').addEventListener('mouseup', () => {
-    if (!isFreeSelectMode()) return;
-    const selection = window.getSelection();
-    const text = selection ? selection.toString().replace(/\s+/g, ' ').trim() : '';
-    if (!text) return;
-    const range = selection.rangeCount ? selection.getRangeAt(0) : null;
-    if (!range || !$('#freeSelectMaterial').contains(range.commonAncestorContainer)) return;
-    _freeSelectionText = text;
-    $('#freeSelectResult').textContent = '';
-    updateFreeSelectTools();
+  const finishFreeSelection = () => setTimeout(syncFreeSelectionFromWindow, 0);
+  $('#freeSelectMaterial').addEventListener('mouseup', finishFreeSelection);
+  $('#freeSelectMaterial').addEventListener('touchend', finishFreeSelection, { passive: true });
+  $('#freeSelectMaterial').addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('selectionchange', () => {
+    if (isFreeSelectMode() && _sumStep === 1) setTimeout(syncFreeSelectionFromWindow, 0);
   });
-  $('#btnFreeSelectJudge').addEventListener('click', judgeFreeSelection);
+  $('#btnFreeSelectJudge').addEventListener('click', () => {
+    if (isWrongBookReviewMode()) judgeReviewSelection();
+    else addFreeSelection();
+  });
+  $('#btnFreeSelectPopover').addEventListener('click', () => {
+    if (isWrongBookReviewMode()) judgeReviewSelection();
+    else addFreeSelection();
+  });
+  document.addEventListener('pointerdown', e => {
+    const pop = $('#freeSelectPopover');
+    const material = $('#freeSelectMaterial');
+    if (pop?.classList.contains('visible') && !pop.contains(e.target) && !material?.contains(e.target)) hideFreeSelectionPopover();
+  });
   $('#sumBtnNext').addEventListener('click', () => {
     if (_sumStep === 1 && !sumSelectedSlices().length) { showToast('请先点选支撑答案的有效信息'); return; }
     if (_sumStep === 2 && !parseInt($('#sumGroupCount').value, 10)) { showToast('请先填写采分点数量'); return; }
@@ -6136,19 +6457,10 @@ function initApp() {
     if (!currentQ) { showToast('题目未备，请稍候或刷新'); return; }
     const ans = $('#rewriteAnswerInput').value.trim();
     if (!ans) { showToast('请先落笔'); return; }
-    const isOnline = D.settings.mode === 'online' && getApiConfig();
+    if (!getApiConfig()) { showToast('请先在设置中配置 AI 接口'); openDrawer(); return; }
     $('#practiceMode').classList.add('reviewing');
     $('#compareMode').classList.remove('hidden');
-    if (isOnline) { await aiSubmitAnswer(ans); }
-    else {
-      // 降级提示：让用户知道为什么走了离线
-      const hasApi = !!getApiConfig();
-      if (D.settings.mode !== 'online' && hasApi) showToast('当前为离线模式，到「设置」切换 AI 陪练即可启用批改');
-      else if (D.settings.mode === 'online' && !hasApi) showToast('API 配置不完整，已降级为离线对照');
-      recordOfflineResult(currentQ, ans, null);
-      showOfflineCompare(currentQ, ans);
-      flushPersist();
-    }
+    await aiSubmitAnswer(ans);
     $('#rewriteAnswerInput').disabled = true;
     $('#btnRewriteSubmit').disabled = true;
     $('#btnRewriteSkip').disabled = true;
@@ -6217,6 +6529,35 @@ function initApp() {
   $('#modeStatus').addEventListener('click', openDrawer);
   $('#drawerClose').addEventListener('click', closeDrawer);
   $('#drawerOverlay').addEventListener('click', closeDrawer);
+  function updateMaxTokensForModel() {
+    const sel = $('#setModel');
+    const manual = $('#setModelManual');
+    let modelVal = '';
+    if (sel && sel.value && sel.value !== '__manual__') {
+      modelVal = sel.value;
+    } else if (manual && manual.style.display !== 'none') {
+      modelVal = manual.value.trim();
+    }
+    if (modelVal) {
+      const meta = getModelMeta(modelVal);
+      const outLimit = meta.maxOutput || 16384;
+      const inputEl = $('#setMaxTokens');
+      inputEl.value = outLimit;
+      inputEl.dataset.maxOutput = outLimit;
+      const display = $('#setMaxTokensDisplay');
+      if (display) display.textContent = '自动 · 不需设置（模型上限 ' + outLimit + ' tokens）';
+      const hint = $('#modelHint');
+      if (hint) {
+        const isKnown = MODEL_META[modelVal];
+        if (isKnown) {
+          const ctx = meta.contextWindow >= 1000000 ? '1M' : Math.round(meta.contextWindow / 1000) + 'K';
+          hint.textContent = '上下文窗口: ' + ctx + ' tokens · 最大输出: ' + outLimit + ' tokens';
+        } else {
+          hint.textContent = '自定义模型 · 最大输出: ' + outLimit + ' tokens';
+        }
+      }
+    }
+  }
   $('#setProvider').addEventListener('change', () => {
     const p = $('#setProvider').value;
     const presetModels = PROVIDERS[p]?.models || [];
@@ -6227,12 +6568,13 @@ function initApp() {
     $('#setModelManual').value = '';
     $('#setModelManual').style.display = 'none';
     toggleApiFields();
+    updateMaxTokensForModel();
     autoFetchModelsOnOpen(); // 提供商变更后参数已不同，自动重拉
   });
   $('#setMode').addEventListener('change', () => {
     const targetMode = $('#setMode').value;
     if (targetMode === 'online' && !getApiConfig()) {
-      $('#setMode').value = D.settings.mode || 'offline';
+      $('#setMode').value = 'online';
       $('#apiSettings').scrollIntoView({behavior:'smooth'});
       showToast('先在下方配置 API，再启用 AI 陪练');
       return;
@@ -6249,6 +6591,7 @@ function initApp() {
   $('#setModel').addEventListener('change', () => {
     if ($('#setModel').value === '__manual__') { $('#setModelManual').style.display='block'; }
     else { $('#setModelManual').style.display='none'; $('#apiTestResult').innerHTML = '<span style="color:var(--muted)">模型已修改，请点击「保存设置」</span>'; }
+    updateMaxTokensForModel();
   });
   $('#setModelManual').addEventListener('input', () => { $('#apiTestResult').innerHTML = '<span style="color:var(--muted)">模型已修改，请点击「保存设置」</span>'; });
   // IME 闪烁修复：拼音上屏前取消逐字对齐（.ime-active），上屏后一次性吸附回格；失焦兜底移除
@@ -6264,7 +6607,7 @@ function initApp() {
   $('#setBaseUrl').addEventListener('input', () => { $('#apiTestResult').innerHTML = '<span style="color:var(--muted)">接口地址已修改，请点击「保存设置」</span>'; });
   $('#setBaseUrl').addEventListener('change', maybeRefetchModelsOnChange);
   $('#setTemperature').addEventListener('input', () => { $('#tempVal').textContent = $('#setTemperature').value; $('#apiTestResult').innerHTML = '<span style="color:var(--muted)">参数已修改，请点击「保存设置」</span>'; });
-  $('#setMaxTokens').addEventListener('input', () => { $('#apiTestResult').innerHTML = '<span style="color:var(--muted)">参数已修改，请点击「保存设置」</span>'; });
+  // setMaxTokens 已改为只读显示，无需监听 input 事件
   $('#btnConnectFile').addEventListener('click', connectDataFile);
   $('#btnSaveSettings').addEventListener('click', () => { saveSettings(); renderModeInfo(); goToMode(D.settings.mode); showToast('设置已保存'); updateModeStatus(); });
   $('#btnTestApi').addEventListener('click', testApiConnection);
@@ -6366,8 +6709,9 @@ function renderUmList() {
   if (!list.length) { ul.innerHTML = ''; empty.classList.remove('hidden'); return; }
   empty.classList.add('hidden');
   ul.innerHTML = list.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt)).map(m => {
-    const statusCls = m.status === 'ready' ? 'ready' : 'draft';
-    const statusText = m.status === 'ready' ? '可练习' : '草稿';
+    const confirmed = !!m.provenance?.userConfirmed;
+    const statusCls = m.status === 'ready' && confirmed ? 'ready' : 'draft';
+    const statusText = m.status === 'ready' && confirmed ? '可练习' : (m.status === 'ready' ? '待确认' : '草稿');
     const modeText = m.mode === 'true-question' ? '真题' : '材料';
     const date = m.updatedAt ? new Date(m.updatedAt).toLocaleDateString() : '';
     return `<li data-id="${m.id}">
@@ -6376,7 +6720,7 @@ function renderUmList() {
       <span class="um-item-meta">${date}</span>
       <span class="um-item-status ${statusCls}">${statusText}</span>
       <span class="um-item-actions">
-        ${m.status === 'ready' ? `<button class="btn btn-line btn-sm um-practice-btn" data-id="${m.id}">练习</button>` : ''}
+        ${m.status === 'ready' && confirmed ? `<button class="btn btn-line btn-sm um-practice-btn" data-id="${m.id}">练习</button>` : ''}
         <button class="btn btn-text btn-sm um-delete-btn" data-id="${m.id}" style="color:var(--zhu)">删除</button>
       </span>
     </li>`;
@@ -6422,9 +6766,63 @@ function inferUserMaterialLevel(result, material) {
   return 'L3';
 }
 
+function splitMaterialChunks(text, maxChars = 9000) {
+  const normalized = String(text || '').replace(/\r\n?/g, '\n').trim();
+  if (!normalized) return [];
+  const blocks = normalized.split(/\n\s*\n+/).map(s => s.trim()).filter(Boolean);
+  const chunks = [];
+  let current = '';
+  const append = part => {
+    if (!part) return;
+    if (!current) { current = part; return; }
+    if ((current + '\n\n' + part).length <= maxChars) current += '\n\n' + part;
+    else { chunks.push(current); current = part; }
+  };
+  blocks.forEach(block => {
+    if (block.length <= maxChars) return append(block);
+    const sentences = block.split(/(?<=[。！？!?；;])\s*/).filter(Boolean);
+    sentences.forEach(sentence => {
+      if (sentence.length <= maxChars) append(sentence);
+      else {
+        for (let i = 0; i < sentence.length; i += maxChars) append(sentence.slice(i, i + maxChars));
+      }
+    });
+  });
+  if (current) chunks.push(current);
+  return chunks;
+}
+function renderMaterialChunks() {
+  const picker = $('#umChunkPicker');
+  const select = $('#umMaterialChunk');
+  const note = $('#umChunkNote');
+  if (!picker || !select || !note) return;
+  const chunks = splitMaterialChunks($('#umMaterialText').value);
+  picker.classList.toggle('hidden', chunks.length <= 1);
+  select.innerHTML = chunks.map((chunk, i) => `<option value="${i}">第 ${i + 1} 段 · ${chunk.slice(0, 34).replace(/\s+/g, ' ')}${chunk.length > 34 ? '…' : ''}</option>`).join('');
+  note.textContent = chunks.length > 1 ? `共 ${chunks.length} 段，每段约不超过 9000 字。生成后可逐段练习，原文仍完整保留。` : '';
+}
+function getSelectedMaterialText() {
+  const fullText = $('#umMaterialText').value.trim();
+  const chunks = splitMaterialChunks(fullText);
+  const index = Number($('#umMaterialChunk')?.value || 0);
+  return chunks.length > 1 ? (chunks[index] || chunks[0]) : fullText;
+}
+async function callValidatedMaterial(messages, retryInstruction, fallbackMaterial, options, requirePracticeData = true) {
+  let lastValidationError = '';
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const instruction = attempt === 0 ? retryInstruction : `${retryInstruction}\n上一次结果校验失败：${lastValidationError}。请只引用原材料中的连续原文，不要改写、概括或替换标点。`;
+    if (attempt > 0) console.warn(`[AI] ⚠ 材料校验失败，第 ${attempt + 1} 次尝试… 上次错误: ${lastValidationError}`);
+    const result = await callAIJson(messages, instruction, options);
+    try { return validateUserMaterialResult(result, fallbackMaterial, requirePracticeData); }
+    catch (e) { lastValidationError = e.message || '材料结构校验失败'; console.warn(`[AI] ⚠ 校验错误: ${lastValidationError}`); if (attempt === 1) throw e; }
+  }
+  throw new Error(lastValidationError || '材料结构校验失败');
+}
+
 // -- Generate practice (material mode) --
 async function umGeneratePractice() {
-  const text = $('#umMaterialText').value.trim();
+  const fullText = $('#umMaterialText').value.trim();
+  const text = getSelectedMaterialText();
   if (!text) { showToast('请先输入或上传材料'); return; }
   if (text.length < 50) { showToast('材料内容过短，至少需要 50 字'); return; }
   const cfg = getApiConfig();
@@ -6434,6 +6832,7 @@ async function umGeneratePractice() {
   btn.disabled = true; btn.textContent = '生成中…';
   const resultBox = $('#umGenerateResult');
   resultBox.classList.add('hidden');
+  console.log(`[AI] 材料生成开始 | 材料长度=${text.length}字 | 方向=${dir} | 模型=${cfg.model}`);
   try {
     const systemPrompt = AI_SYSTEM_BASE + `\n\n你现在需要根据用户提供的材料，生成一道${dir === 'summary' ? '概括训练' : '规范改写'}练习题。
 要求：
@@ -6443,14 +6842,18 @@ async function umGeneratePractice() {
 4. points 每个采分点包含 name(上位概括词)、keys(关键词数组)、acceptable(可接受的同义表达数组)
 5. type: 问题|做法|成效|变化|经验
 6. level: L1|L2|L3。按材料实际密度判断：3个核心点且材料不超过约520字为L1；4个核心点且材料不超过约720字为L2；更高密度才为L3，不要为了显得正式或内容丰富随意上调难度。
+7. slices.valid=true 时 point 必须是从 0 开始的采分点索引，不能使用 1-based 编号；无效切片 point 写 -1。
 7. 参考答案必须使用“总括句 + 编号 + 概括词 + 具体事实”的结构。每个要点都要写清材料中的动作、对象或结果，不能只堆“整合资源、搭建平台、提升水平”等空泛概括词。
 8. 参考答案不要机械套用“主要做法有：一是……二是……三是……”；可以自然表达，但编号和层次必须清楚。避免语病、搭配不当和宣传稿式套话。
 9. 概括词必须能从材料事实中提炼，具体事实优先使用材料原词；不得把材料中没有的目的、效果或因果关系补写进去。
 10. 所有字段必须用简体中文`;
     const userMsg = `材料原文：\n${text}\n\n训练方向：${dir === 'summary' ? '概括训练' : '规范改写'}\n\n请返回严格的 JSON 对象。`;
-    const raw = await callAI([{ role: 'system', content: systemPrompt }, { role: 'user', content: userMsg }], true);
-    const result = JSON.parse(raw.trim().replace(/^```json\s*/, '').replace(/```\s*$/, ''));
-    validateUserMaterialResult(result, text, true);
+    const result = await callValidatedMaterial(
+      [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMsg }],
+      '上一次返回的 JSON 不完整或切片未对齐。请重新输出完整、可解析的 JSON；slices.text 必须逐字来自材料原文，不要输出 Markdown 代码围栏。',
+      text,
+      { task: 'material' }
+    );
     result.level = inferUserMaterialLevel(result, text);
     _umLastGenerated = result;
     // Save as ready material
@@ -6461,7 +6864,7 @@ async function umGeneratePractice() {
       title: (result.title || text.slice(0, 20)) + (text.length > 20 && !result.title ? '…' : ''),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      original: { material: text, question: '', answer: '', files: {} },
+      original: { material: fullText, question: '', answer: '', files: {}, selectedChunk: text },
       generated: {
         type: result.type || '做法',
         level: result.level || 'L1',
@@ -6480,7 +6883,7 @@ async function umGeneratePractice() {
     addUserMaterial(item);
     // Show result
     resultBox.innerHTML = `<h4>✔ 生成成功</h4>
-      <div class="um-original"><strong>来源：</strong>用户上传材料 · <strong>题目：</strong>AI 生成 · <strong>参考答案：</strong>AI 生成，待用户确认</div>
+      <div class="um-original"><strong>来源：</strong>用户上传材料 · <strong>本次处理：</strong>${fullText.length > text.length ? `第 ${Number($('#umMaterialChunk').value || 0) + 1} 段` : '整段'} · <strong>参考答案：</strong>AI 生成，待用户确认</div>
       <div class="um-ai">
         <p><strong>题目：</strong>${esc(result.prompt || '')}</p>
         <p><strong>题型：</strong>${esc(result.type || '')} · <strong>难度：</strong>${esc(result.level || '')}</p>
@@ -6488,12 +6891,12 @@ async function umGeneratePractice() {
         <p><strong>参考答案：</strong>${esc(result.ref || '')}</p>
       </div>
       <div class="um-actions" style="margin-top:14px">
-        <button class="btn btn-ink btn-sm" onclick="startUserMaterialPractice('${item.id}')">开始练习</button>
-        <button class="btn btn-line btn-sm" onclick="umConfirmGenerated('${item.id}')">确认结果</button>
+        <button class="btn btn-ink btn-sm" onclick="umConfirmGenerated('${item.id}')">确认结果并练习</button>
       </div>`;
     resultBox.classList.remove('hidden');
-    showToast('练习已生成，可直接开始或在列表中查看');
+    showToast('练习已生成，请确认 AI 结果后开始');
   } catch(e) {
+    console.error(`[AI] ✗ 材料生成失败: ${e.message}`);
     resultBox.innerHTML = `<h4 style="color:var(--zhu)">✘ 生成失败</h4><p>${esc(e.message)}</p>`;
     resultBox.classList.remove('hidden');
   } finally {
@@ -6503,7 +6906,8 @@ async function umGeneratePractice() {
 
 function umConfirmGenerated(id) {
   updateUserMaterial(id, { provenance: { sourceType: '用户上传材料', generatedByAI: true, userConfirmed: true, confirmedAt: new Date().toISOString() } });
-  showToast('已确认');
+  showToast('已确认，进入练习');
+  startUserMaterialPractice(id);
 }
 
 // -- Parse true question --
@@ -6513,24 +6917,7 @@ async function umParseTrueQuestion() {
   const answer = $('#umTqAnswer').value.trim();
   if (!material) { showToast('请先输入或上传材料'); return; }
   const cfg = getApiConfig();
-  // 无 API 时仍可保存原文
-  if (!cfg) {
-    const item = {
-      id: genMaterialId(),
-      mode: 'true-question',
-      status: 'draft',
-      title: (question || material).slice(0, 20) + '…',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      original: { material, question, answer, files: {} },
-      generated: null,
-      provenance: { sourceType: '用户导入真题', generatedByAI: false, userConfirmed: false, confirmedAt: null }
-    };
-    addUserMaterial(item);
-    showToast('API 未配置，已保存原文为草稿（配置后可重新解析）');
-    $('#btnUmSaveTq').disabled = true;
-    return;
-  }
+  if (!cfg) { showToast('请先在设置中配置 AI 接口，再解析真题'); openDrawer(); return; }
   const btn = $('#btnUmParse');
   btn.disabled = true; btn.textContent = '解析中…';
   const resultBox = $('#umParseResult');
@@ -6547,9 +6934,13 @@ async function umParseTrueQuestion() {
 
 输出 JSON 格式: { type, level, prompt, points:[], slices:[], buildChain:[], answerStructure:{}, extractedReference:"", uncertainties:[], warnings:[] }`;
     const userMsg = `原始材料：\n${material}\n\n${question ? '原始题目：\n' + question + '\n\n' : ''}${answer ? '原始答案：\n' + answer : ''}`;
-    const raw = await callAI([{ role: 'system', content: systemPrompt }, { role: 'user', content: userMsg }], true);
-    const result = JSON.parse(raw.trim().replace(/^```json\s*/, '').replace(/```\s*$/, ''));
-    validateUserMaterialResult(result, material, false);
+    const result = await callValidatedMaterial(
+      [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMsg }],
+      '上一次返回的 JSON 不完整或切片未对齐。请重新输出完整、可解析的 JSON；slices.text 必须逐字来自材料原文，不要输出 Markdown 代码围栏。',
+      material,
+      { task: 'material' },
+      false
+    );
     // Show result with original vs AI separation
     resultBox.innerHTML = `<h4>✔ 解析完成</h4>
       <div class="um-original">
@@ -6592,7 +6983,7 @@ async function umParseTrueQuestion() {
           ref: result.extractedReference || '',
           aiAnalysis: { extractedReference: result.extractedReference, uncertainties: result.uncertainties, warnings: result.warnings }
         },
-        provenance: { sourceType: '用户导入真题', generatedByAI: true, userConfirmed: false, confirmedAt: null }
+        provenance: { sourceType: '用户导入真题', generatedByAI: true, userConfirmed: true, confirmedAt: new Date().toISOString() }
       };
       addUserMaterial(item);
       showToast('已保存为个人真题');
@@ -6608,9 +6999,14 @@ async function umParseTrueQuestion() {
 
 // -- Practice integration --
 function startUserMaterialPractice(id) {
+  if (!getApiConfig()) { showToast('请先在设置中配置 AI 接口，再开始 AI 练习'); openDrawer(); return; }
   const m = getUserMaterial(id);
   if (!m || !m.generated) {
     showToast('这份材料还没有完整的 AI 结构化结果，可以先阅读，或重新解析后练习。');
+    return;
+  }
+  if (!m.provenance?.userConfirmed) {
+    showToast('请先确认 AI 生成结果，再进入练习');
     return;
   }
   const g = m.generated;
@@ -6657,10 +7053,12 @@ function initMaterialsModule() {
       const f = await readTextFile('.txt,.md');
       $('#umMaterialText').value = f.text;
       $('#umMaterialFileInfo').textContent = `${f.name}（${f.text.length} 字）`;
+      renderMaterialChunks();
     } catch(e) { if (e.message !== '取消') showToast(e.message); }
   });
   $('#btnUmGenerate').addEventListener('click', umGeneratePractice);
   $('#btnUmSaveDraft').addEventListener('click', umSaveDraft);
+  $('#umMaterialText').addEventListener('input', renderMaterialChunks);
   // True question mode uploads
   $$('.um-upload').forEach(btn => btn.addEventListener('click', async () => {
     const targetId = btn.dataset.target;

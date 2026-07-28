@@ -19,7 +19,8 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f4f0e6'/%3E%3Crect x='13' y='6' width='6' height='20' fill='%23b03a28'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,500;1,500;1,600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,500;1,500;1,600&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700;900&family=Noto+Sans+SC:wght@300;400;500&family=Cormorant+Garamond:ital,wght@0,500;1,500;1,600&family=JetBrains+Mono:wght@400;600&display=swap" media="print" onload="this.media='all'">
 <style>
 /* ============================================================
    规范表达练习 · 视觉系统「纸面练习」
@@ -101,6 +102,7 @@
   --muted:      #868d9b;   /* 暗色微调亮至 ≥4.5:1 */
   --zhu:        #d0583f;
   --zhu-deep:   #b0432e;
+--zhu-bright: #e0695a;
   --dai:        #84a8be;
   --dai-deep:   #a5c2d4;
   --gold:       #b3924d;
@@ -472,9 +474,18 @@ select:hover { border-color:var(--line-strong); }
   .toolbar-skip .btn { height:100%; padding-left:10px; padding-right:10px; }
   .sum-wiz-bar { overflow-x:auto; justify-content:flex-start; scrollbar-width:none; }
   .sum-wiz-bar::-webkit-scrollbar { display:none; }
-  .swb-item { flex:0 0 auto; min-width:74px; white-space:nowrap; }
+  .swb-item { flex:0 0 auto; min-width:64px; white-space:nowrap; font-size:12px; padding:9px 2px 8px; }
+  .sum-wiz-bar::after {
+    content: '';
+    position: sticky;
+    right: 0;
+    min-width: 24px;
+    background: linear-gradient(to right, transparent, var(--paper));
+    flex-shrink: 0;
+  }
   .sum-segs { font-size:15px; line-height:2.0; }
   .free-select-material { font-size:15px; line-height:2.0; padding-left:13px; }
+  textarea.grid-paper { resize:none; }
   .free-select-tools.visible { position:relative; left:auto; right:auto; bottom:auto; z-index:auto; margin:0; padding:9px 10px; align-items:stretch; background:var(--paper-2); box-shadow:none; }
   .free-select-tools.visible .free-select-preview { max-height:2.8em; overflow:hidden; }
   .free-select-tools .btn { flex:none; min-height:34px; }
@@ -1299,7 +1310,8 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
   body { -webkit-tap-highlight-color:transparent; }
   .kbd-hint, .btn .kbd { display:none; }
   .icon-btn { width:36px; height:36px; }
-  .seg-btn { padding-top:8px; padding-bottom:8px; }
+  .seg-btn { padding-top:8px; padding-bottom:8px; min-height:44px; }
+  .swb-item { min-height:44px; }
   .star-btn { width:34px; height:34px; font-size:26px; }
   .hist-delete { padding:6px 8px; }
   .nav-btn { padding-top:12px; padding-bottom:12px; }
@@ -1382,7 +1394,12 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
 
 /* ── 改写批改态：题目区保留，书写区收起 ── */
 #practiceMode.reviewing .grid-zone,
-#practiceMode.reviewing .card-foot { display:none; }
+#practiceMode.reviewing .card-foot {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height .3s ease, opacity .25s ease;
+}
 #practiceMode.reviewing .answer-card { max-height:none; display:block; }
 #practiceMode.reviewing .card-material { max-height:none; overflow:visible; }
 @media (min-width:768px) {
@@ -1659,6 +1676,7 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
             </div>
             <!-- Panel 1: 找点 -->
             <div class="sum-panel hidden" data-p="1">
+              <p class="step-hint" id="step1Hint" style="margin:8px 0 4px;font-size:13px;color:var(--muted)">在下方材料中点选支撑答案的关键事实，排除背景描述和修辞性内容。</p>
               <div class="sum-step-head"><span class="summary-step-no">01</span><span>圈出支撑答案的事实</span><span class="step-hint">排除背景、例子和修辞性描述</span></div>
               <div class="sum-segs" id="sumSegs"></div>
               <div id="freeSelectPanel" class="free-select-panel hidden">
@@ -1677,14 +1695,14 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
             <div class="sum-panel hidden" data-p="2">
               <div class="sum-step-head"><span class="summary-step-no">02</span><span>归类 · 命名</span><span class="step-hint">把事实分组，写出上位概括词</span></div>
               <p style="font:11px/1.4 var(--font-sans);color:var(--muted);margin:6px 0 0">一个事实可以支撑多个要点，也可只归入一个</p>
-              <details class="sum-peek"><summary>回看材料原文</summary><div class="sum-peek-body" id="sumPeekMat"></div></details>
+              <details class="sum-peek" open><summary>回看材料原文</summary><div class="sum-peek-body" id="sumPeekMat"></div></details>
               <div class="sum-count-row"><label for="sumGroupCount">采分点数量</label><input type="number" id="sumGroupCount" min="1" max="8" placeholder="如 4"></div>
               <div id="sumGroups"></div>
             </div>
             <!-- Panel 3: 成句 -->
             <div class="sum-panel hidden" data-p="3">
               <div class="sum-step-head"><span class="summary-step-no">03</span><label for="answerInput">成句 · 写出完整概括</label></div>
-              <details class="sum-peek"><summary>回看材料原文</summary><div class="sum-peek-body" id="sumPeekMat2"></div></details>
+              <details class="sum-peek" open><summary>回看材料原文</summary><div class="sum-peek-body" id="sumPeekMat2"></div></details>
               <div class="sum-recap" id="sumRecap"></div>
               <div class="grid-zone">
                 <div class="grid-wrap">
@@ -2545,21 +2563,29 @@ const $$ = s => Array.from(document.querySelectorAll(s));
 function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
 // 属性插值专用：在 esc 基础上额外转义引号
 function escAttr(s) { return esc(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+// 评分取整 + 范围钳位：AI 返回的 score 可能是小数，统一处理为 0-10 整数
+function clampScore(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(10, Math.round(n)));
+}
 
 // —— 动效：GSAP 在场且用户未要求减少动态时启用，否则整体回退 CSS 动画 ——
 const G = window.gsap || null;
 const MOTION = !!G && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 if (MOTION) document.documentElement.classList.add('gsap-motion');
 
-function showToast(msg, dur=2000) {
+function showToast(msg, dur) {
+  const isError = /失败|错误|未得|不支持/.test(msg);
+  const d = dur ?? Math.max(2000, msg.length * (isError ? 100 : 80));
   const el = document.createElement('div'); el.className = 'toast'; el.textContent = msg;
   $('#toastContainer').appendChild(el);
   if (MOTION) {
     el.style.animation = 'none';
     G.fromTo(el, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: .26, ease: 'power2.out' });
-    setTimeout(() => { G.to(el, { opacity: 0, y: 8, duration: .26, ease: 'power1.in', onComplete: () => el.remove() }); }, dur);
+    setTimeout(() => { G.to(el, { opacity: 0, y: 8, duration: .26, ease: 'power1.in', onComplete: () => el.remove() }); }, d);
   } else {
-    setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 300); }, dur);
+    setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 300); }, d);
   }
 }
 
@@ -2580,7 +2606,7 @@ function confirmDialog({ title='确认操作', message='', confirmText='确认',
         <p class="confirm-msg" style="display:none"></p>
         <div class="confirm-actions">
           <button class="btn btn-line" type="button" data-act="cancel"></button>
-          <button class="btn btn-ink" type="button" data-act="ok"></button>
+          <button class="${danger ? 'btn-danger' : 'btn btn-ink'}" type="button" data-act="ok"${danger ? ' style="background:var(--zhu);color:var(--paper);border:none;padding:8px 20px;border-radius:var(--radius);font-weight:600"' : ''}></button>
         </div>
       </div>`;
     document.body.appendChild(overlay);
@@ -2640,6 +2666,7 @@ function toggleTheme() {
 // NAV — 练习 / 检查 / 记录
 // ============================================================
 let currentTab = 'practice';
+let _panelScrollPositions = {};
 function updateNavInk() {
   const ink = $('#navInk');
   const active = document.querySelector('.nav-btn.active');
@@ -2651,6 +2678,9 @@ function updateNavInk() {
   ink.style.width = `${a.width}px`;
 }
 function switchTab(tab) {
+  // 保存当前面板滚动位置
+  const prevPanelId = { practice: '#panelPractice', scan: '#panelScan', archive: '#panelArchive', materials: '#panelMaterials' }[currentTab];
+  if (prevPanelId) _panelScrollPositions[currentTab] = window.scrollY;
   currentTab = tab;
   $$('.nav-btn').forEach(b => {
     const on = b.dataset.tab === tab;
@@ -2675,6 +2705,11 @@ function switchTab(tab) {
       panelEl.classList.add('panel-enter');
       panelEl.addEventListener('animationend', () => panelEl.classList.remove('panel-enter'), { once: true });
     }
+  }
+  // 恢复新面板滚动位置
+  if (_panelScrollPositions[tab] != null) {
+    const savedY = _panelScrollPositions[tab];
+    requestAnimationFrame(() => window.scrollTo(0, savedY));
   }
   updateNavInk();
   if (tab === 'scan') renderScanHistory();
@@ -3243,7 +3278,6 @@ var QUESTION_BANK = [
 var SUMMARY_BANK = [];
 
 // Built-in source-based materials removed; use My Materials with AI-generated exercises.
-SUMMARY_BANK = SUMMARY_BANK.slice(-4);
 
 // QUESTION ENGINE
 // ============================================================
@@ -3613,6 +3647,7 @@ function pickSummaryQuestion(forceWrong) {
 const summaryQuestionCache = new Map();
 let _summaryGenerating = false;
 let _sumStep = 0; // current wizard step
+let _materialScrollTop = -1;
 let _appMode = 'practice'; // 'practice' | 'wrongBookReview'
 
 // ── 错题本 ──
@@ -3674,6 +3709,11 @@ function getWrongReasonStats() {
 function sumGoStep(n) {
   // 离开当前步骤即使稍后返回，也不能让旧的 AI 判断结果重新写回界面。
   _freeJudgeRequestId++;
+  // 离开 step 0 时保存材料滚动位置
+  if (_sumStep === 0 && n !== 0) {
+    const mat = $('#summaryMaterial');
+    if (mat) _materialScrollTop = mat.scrollTop;
+  }
   _sumStep = n;
   $$('#summaryMode .sum-panel').forEach(p => p.classList.toggle('hidden', Number(p.dataset.p) !== n));
   $$('#sumWizBar .swb-item').forEach(s => {
@@ -3689,6 +3729,21 @@ function sumGoStep(n) {
   // Step-specific init
   if (n === 2) { renderSumGroups(); }
   if (n === 3) { renderSumRecap(); }
+  // Step 1 引导语：L3 自由划选模式追加提示
+  if (n === 1) {
+    const step1Hint = $('#step1Hint');
+    if (step1Hint) {
+      step1Hint.textContent = '在下方材料中点选支撑答案的关键事实，排除背景描述和修辞性内容。'
+        + (isFreeSelectMode() ? '也可长按材料文字自由选段。' : '');
+    }
+  }
+  // 进入 step 0 时恢复材料滚动位置
+  if (n === 0 && _materialScrollTop >= 0) {
+    requestAnimationFrame(() => {
+      const mat = $('#summaryMaterial');
+      if (mat) mat.scrollTop = _materialScrollTop;
+    });
+  }
   // Scroll to top of card
   const card = $('#summaryMode .answer-card');
   if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -3745,6 +3800,10 @@ function updateFreeSelectTools() {
   const review = free && isWrongBookReviewMode();
   const pending = review ? (_freeReviewPendingText || _freeSelectionText) : _freeSelectionText;
   tools.classList.toggle('visible', free && !!pending);
+  // 移动端划选工具栏可见时滚动到可视区域，避免被遮挡
+  if (free && pending && tools.classList.contains('visible')) {
+    requestAnimationFrame(() => { tools.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); });
+  }
   $('#freeSelectPreview').textContent = pending ? `${review && _freeReviewPendingText ? '待复盘' : '已选'}：${pending}` : (review ? '长按选字后，点击加入待复盘选段' : '通读时长按选字，再点击加入练习选段');
   $('#btnFreeSelectJudge').classList.remove('hidden');
   $('#btnFreeSelectJudge').textContent = review ? (_freeReviewPendingText ? 'AI 判断复盘选段' : '加入待复盘选段') : '加入练习选段';
@@ -4093,10 +4152,34 @@ function assessSummary(q, selected, groups, answer) {
 async function aiAssessSummary(q, selected, names, answer) {
   const btn = $('#btnSubmit');
   if (btn) { btn.disabled = true; btn.textContent = 'AI 批改中…'; }
+  let _gradingTimer = null;
   try {
-  $('#summaryMode').classList.add('hidden');
+  // 不立即隐藏答题卡，在底部显示批改提示
+  let _gradingBanner = $('#gradingBanner');
+  if (!_gradingBanner) {
+    _gradingBanner = document.createElement('div');
+    _gradingBanner.id = 'gradingBanner';
+    _gradingBanner.style.cssText = 'text-align:center;padding:10px 0;font-size:13px;color:var(--muted);border-top:1px solid var(--line);';
+    _gradingBanner.textContent = 'AI 正在批改…';
+    const cardFoot = $('#summaryMode .card-foot');
+    if (cardFoot) cardFoot.parentNode.insertBefore(_gradingBanner, cardFoot.nextSibling);
+  } else {
+    _gradingBanner.textContent = 'AI 正在批改…';
+    _gradingBanner.classList.remove('hidden');
+  }
+  // 骨架屏 + 阶段性提示
   $('#compareMode').classList.remove('hidden');
-  $('#compareMode').innerHTML = '<div class="verdict"><span class="skel" style="width:40%"></span><span class="skel" style="width:96%"></span><span class="skel" style="width:88%"></span><span class="skel" style="width:70%"></span></div>';
+  $('#compareMode').innerHTML = '<div class="verdict"><span class="skel" style="width:40%"></span><span class="skel" style="width:96%"></span><span class="skel" style="width:88%"></span><span class="skel" style="width:70%"></span><div id="gradingProgress" style="text-align:center;padding:12px 0;font-size:13px;color:var(--muted);min-height:2em;">AI 正在逐句比对你的答案…</div></div>';
+  // 阶段性提示
+  let _gradingStartTime = Date.now();
+  _gradingTimer = setInterval(() => {
+    const gp = $('#gradingProgress');
+    const elapsed = (Date.now() - _gradingStartTime) / 1000;
+    if (gp) {
+      if (elapsed >= 15) gp.textContent = '仍在等待响应，请耐心等待…';
+      else if (elapsed >= 5) gp.textContent = '正在生成维度评分…';
+    }
+  }, 1000);
 
   const pointsDesc = q.points.map((p,i) => `采分点${i+1}「${p.name}」：事实 ${(q.slices||[]).filter(s=>s.valid&&s.point===i).map(s=>s.text).join('；')}`).join('\n');
   const selectedFacts = selected.map(i => (q.slices[i]||{}).text||'').join('；');
@@ -4120,21 +4203,21 @@ ${pointsDesc}
 3. 每个用户单元匹配到一个或多个采分点，标记 status：covered(已覆盖)/partial(部分覆盖，如停留在事实层)/missing(漏点)/extra(多余)/uncertain(无法判断是否等价，不直接扣分，界面显示为“待对照”；不要在说明文字里输出英文状态名)；
 4. problemType 枚举：none/漏点/事实不准/归类不当/概括过窄/概括过宽/口语化/重复/逻辑不清；
 5. 对每个单元给出原文片段、对应采分点、判断、原因、建议改法、参考表达；comment 必须有依据（对应材料哪个事实或哪个采分点），禁止"表述不够规范""概括不到位"这类无依据评语；suggestion 给出可直接替换的写法；
-6. 最后给 4 个维度分数：信息要点（要点覆盖全不全、事实准不准）、概括提炼（概括是否准确，不过宽过窄、不停留在事实层）、表达规范（有无口语化）、逻辑结构（答案结构是否完整清晰）；各 0-10，每个都要给 score 和一句话 comment（说清这个分数扣在哪）；评分锚点：9-10=接近参考答案，7-8=小问题，5-6=明显漏点或概括偏差，≤4=大半未达标；
-7. score 为综合分（0-10），是逐句批改后的摘要，不是字符串匹配；
+6. 最后给 4 个维度分数：信息要点（要点覆盖全不全、事实准不准）、概括提炼（概括是否准确，不过宽过窄、不停留在事实层）、表达规范（有无口语化）、逻辑结构（答案结构是否完整清晰）；各 0-10 的整数，每个都要给 score 和一句话 comment（说清这个分数扣在哪）；评分锚点：9-10=接近参考答案，7-8=小问题，5-6=明显漏点或概括偏差，≤4=大半未达标；
+7. score：总评分，0-10 的整数。score 必须等于四个维度分的算术平均值（四舍五入取整），是逐句批改后的摘要，不是字符串匹配。reasoning 字段中先写出评分依据，然后给出 score；
 8. overall 必须点名本答案最影响得分的一两个问题，禁止空泛表扬。
 
 【返回严格 JSON】
-{"overall":"总体评价","units":[{"userText":"用户答案原文片段","matchedPoint":"对应采分点","status":"covered|partial|missing|extra|uncertain","problemType":"none|漏点|事实不准|归类不当|概括过窄|概括过宽|口语化|重复|逻辑不清","comment":"原因","suggestion":"建议改法","referenceText":"参考表达"}],"dimensions":{"信息要点":{"score":0,"comment":"评语"},"概括提炼":{"score":0,"comment":"评语"},"表达规范":{"score":0,"comment":"评语"},"逻辑结构":{"score":0,"comment":"评语"}},"score":0,"nextFocus":"下一步重点"}`;
+{"overall":"总体评价","units":[{"userText":"用户答案原文片段","matchedPoint":"对应采分点","status":"covered|partial|missing|extra|uncertain","problemType":"none|漏点|事实不准|归类不当|概括过窄|概括过宽|口语化|重复|逻辑不清","comment":"原因","suggestion":"建议改法","referenceText":"参考表达"}],"dimensions":{"信息要点":{"score":7,"comment":"评语"},"概括提炼":{"score":7,"comment":"评语"},"表达规范":{"score":7,"comment":"评语"},"逻辑结构":{"score":7,"comment":"评语"}},"nextFocus":"下一步重点","reasoning":"先简述评分依据再给出分数","score":7}`;
   const sysMsg = {role:'system',content:AI_SYSTEM_BASE+' 所有 string 字段值必须用简体中文，不要混入英文或拼音术语。status 的 JSON 值只能是 covered|partial|missing|extra|uncertain，但 uncertain 在界面显示为“待对照”，任何评语和建议都不要输出这个英文状态名。problemType 只能是上方枚举值。nextFocus 必须从本题学习者的实际错误出发归纳成可迁移的通用概括技巧，先点明本题错在哪、再给通用做法；禁止脱离本题错误的空泛建议。'};
-  const resp = await callAI([sysMsg, {role:'user',content:prompt}]);
+  const resp = await callAI([sysMsg, {role:'user',content:prompt}], true, {task:'grading'});
   const result = parseJSON(resp);
   showSummaryOnlineCompare(q, selected, names, answer, result);
-  const rec = {id:Date.now()+Math.random(), date:new Date().toISOString(), mode:'online', trainingType:'summary', question:q, userAnswer:answer, summaryNames:names, selectedSentences:selected, score:(Number(result.score)||null), aiScore:slimAiResult(result), selfRating:null, summaryFeedback:[], summaryStats:null};
+  const rec = {id:Date.now()+Math.random(), date:new Date().toISOString(), mode:'online', trainingType:'summary', question:q, userAnswer:answer, summaryNames:names, selectedSentences:selected, score: clampScore(result.score), aiScore:slimAiResult(result), selfRating:null, summaryFeedback:[], summaryStats:null};
   pushHistory(rec); pendingHistoryId = rec.id; flushPersist(); renderSessionStats();
 
   // ── 错题本更新（AI 路径）──
-  const aiScore = (result && result.score != null) ? result.score : 10;
+  const aiScore = (result && result.score != null) ? clampScore(result.score) : 10;
   const hasMissing = (result && result.units || []).some(u => u.status === 'missing');
   const aiWrong = aiScore < 7 || hasMissing;
   updateWrongBook(q.id, aiWrong, aiWrong ? [
@@ -4148,6 +4231,9 @@ ${pointsDesc}
 
   $('#btnSummaryNext').focus({ preventScroll: true });
   } finally {
+    clearInterval(_gradingTimer);
+    const gb = $('#gradingBanner');
+    if (gb) gb.classList.add('hidden');
     if (btn) { btn.disabled = false; btn.textContent = '提交'; }
   }
 }
@@ -4168,8 +4254,8 @@ function showSummaryOnlineCompare(q, selected, names, answer, result) {
     const v = nd[k];
     return `<div class="dim-card"><div class="dc-head"><span class="dc-name">${k}</span><span class="dc-score">${v.score}</span></div><div class="dc-def">${DIM_DEFS[k]}</div>${v.comment ? `<div class="dc-comment">${esc(v.comment)}</div>` : ''}</div>`;
   }).join('');
-  const scoreVal = Number(result.score)||0;
-  $('#compareMode').innerHTML = `<div class="verdict"><div class="verdict-head"><div class="verdict-eyebrow">AI 批改 · 逐语义单元</div><div class="score-head"><div class="score-circle"><svg class="score-ring" viewBox="0 0 92 70" aria-hidden="true"><path d="M10 40 C5 22 28 7 48 8 C72 9 89 24 85 41 C81 58 57 66 39 63 C19 60 3 56 10 40 Z"/></svg><span class="score-num"><span class="score-value" data-score="${scoreVal}">0</span><span class="score-max">/ 10</span></span></div><div class="score-text"><div class="verdict-title">逐句批改摘要</div><div class="verdict-lede">AI 批改 · 模型：${esc(modelName)}。逐语义单元匹配采分点，标 uncertain 的请自行对照。</div><div class="band-tag">${scoreBand(scoreVal).label}档 · ${scoreBand(scoreVal).desc}</div></div></div></div><div class="layer-list"><div class="layer-item"><div class="layer-title">逐句反馈</div><div class="layer-subtitle">${unitsHtml || '<div class="fb-detail">未返回逐句反馈</div>'}</div></div><div class="layer-item"><div class="layer-title">维度评分</div><div class="layer-subtitle"><div class="dim-cards" style="margin:4px 0">${dimsHtml || '-'}</div>${rubricHtml()}</div></div></div><div class="verdict-grid"><figure class="verdict-col"><figcaption>你的答案<span class="fig-en">YOURS</span></figcaption><div class="verdict-text user grid-paper">${esc(answer)}</div></figure><figure class="verdict-col"><figcaption>参考答案<span class="fig-en">REFERENCE</span></figcaption><div class="verdict-text ref">${esc(q.ref)}</div></figure></div>${result.overall?`<div class="fb-detail fb-ok" style="margin-top:8px">总体评价：${esc(result.overall)}</div>`:''}${result.nextFocus?`<div class="fb-detail" style="margin-top:6px">下一步重点：${esc(result.nextFocus)}</div>`:''}<div class="action-row"><button class="btn btn-text" id="btnSummaryRetry" type="button">重新作答</button><button class="btn btn-ink" id="btnSummaryNext" type="button">下一题 -></button></div></div>`;
+  const scoreVal = clampScore(result.score);
+  $('#compareMode').innerHTML = `<div class="verdict"><div class="verdict-head"><div class="verdict-eyebrow">AI 批改 · 逐语义单元</div><div class="score-head"><div class="score-circle"><svg class="score-ring" viewBox="0 0 92 70" aria-hidden="true"><path d="M10 40 C5 22 28 7 48 8 C72 9 89 24 85 41 C81 58 57 66 39 63 C19 60 3 56 10 40 Z"/></svg><span class="score-num"><span class="score-value" data-score="${scoreVal}">0</span><span class="score-max">/ 10</span></span></div><div class="score-text"><div class="verdict-title">逐句批改摘要</div><div class="verdict-lede">AI 批改 · 模型：${esc(modelName)}。逐语义单元匹配采分点，标 uncertain 的请自行对照。</div><div class="band-tag">${scoreBand(scoreVal).label}档 · ${scoreBand(scoreVal).desc}</div></div></div></div>${result.overall?`<div class="fb-detail fb-ok" style="margin-top:8px">总体评价：${esc(result.overall)}</div>`:''}${result.nextFocus?`<div class="fb-detail" style="margin-top:6px">下一步重点：${esc(result.nextFocus)}</div>`:''}<details class="compare-detail-section" style="margin:8px 0"><summary style="cursor:pointer;font-size:14px;color:var(--muted);padding:4px 0">展开逐句反馈 ▾</summary><div class="layer-list"><div class="layer-item"><div class="layer-title">逐句反馈</div><div class="layer-subtitle">${unitsHtml || '<div class="fb-detail">未返回逐句反馈</div>'}</div></div></div></details><details class="compare-detail-section" style="margin:8px 0"><summary style="cursor:pointer;font-size:14px;color:var(--muted);padding:4px 0">展开维度评分 ▾</summary><div class="layer-list"><div class="layer-item"><div class="layer-title">维度评分</div><div class="layer-subtitle"><div class="dim-cards" style="margin:4px 0">${dimsHtml || '-'}</div>${rubricHtml()}</div></div></div></details><div class="verdict-grid"><figure class="verdict-col"><figcaption>你的答案<span class="fig-en">YOURS</span></figcaption><div class="verdict-text user grid-paper">${esc(answer)}</div></figure><figure class="verdict-col"><figcaption>参考答案<span class="fig-en">REFERENCE</span></figcaption><div class="verdict-text ref">${esc(q.ref)}</div></figure></div><div class="action-row"><button class="btn btn-text" id="btnSummaryRetry" type="button">重新作答</button><button class="btn btn-ink" id="btnSummaryNext" type="button">下一题 -></button></div></div>`;
   staggerMarks($('#compareMode'));
   const scoreEl = $('#compareMode .score-value');
   if (scoreEl) animateScore(scoreEl, scoreEl.dataset.score);
@@ -4343,31 +4429,31 @@ const PROVIDERS = {
 };
 
 const MODEL_META = {
-  'deepseek-chat':     { contextWindow: 64000, maxOutput: 8192 },
-  'deepseek-reasoner': { contextWindow: 64000, maxOutput: 8192 },
-  'gpt-4o-mini':       { contextWindow: 128000, maxOutput: 16384 },
-  'gpt-4o':            { contextWindow: 128000, maxOutput: 16384 },
-  'gpt-4-turbo':       { contextWindow: 128000, maxOutput: 4096 },
-  'gpt-3.5-turbo':     { contextWindow: 16385, maxOutput: 4096 },
-  'glm-4-flash':       { contextWindow: 128000, maxOutput: 4096 },
-  'glm-4-air':         { contextWindow: 128000, maxOutput: 4096 },
-  'glm-4':             { contextWindow: 128000, maxOutput: 4096 },
-  'glm-4-long':        { contextWindow: 1000000, maxOutput: 4096 },
-  'moonshot-v1-8k':    { contextWindow: 8000, maxOutput: 4096 },
-  'moonshot-v1-32k':   { contextWindow: 32000, maxOutput: 4096 },
-  'moonshot-v1-128k':  { contextWindow: 128000, maxOutput: 4096 },
-  'qwen-turbo':        { contextWindow: 128000, maxOutput: 8192 },
-  'qwen-plus':         { contextWindow: 128000, maxOutput: 8192 },
-  'qwen-max':          { contextWindow: 32000, maxOutput: 8192 },
-  'qwen-long':         { contextWindow: 1000000, maxOutput: 6000 },
-  'doubao-pro-32k':    { contextWindow: 32000, maxOutput: 4096 },
-  'doubao-lite-32k':   { contextWindow: 32000, maxOutput: 4096 },
-  'deepseek-ai/DeepSeek-V3':    { contextWindow: 64000, maxOutput: 8192 },
-  'Qwen/Qwen2.5-72B-Instruct': { contextWindow: 32768, maxOutput: 4096 },
-  'THUDM/glm-4-9b-chat':        { contextWindow: 32768, maxOutput: 4096 },
+  'deepseek-chat':     { contextWindow: 64000, maxTokens: 8192 },
+  'deepseek-reasoner': { contextWindow: 64000, maxTokens: 8192 },
+  'gpt-4o-mini':       { contextWindow: 128000, maxTokens: 16384 },
+  'gpt-4o':            { contextWindow: 128000, maxTokens: 16384 },
+  'gpt-4-turbo':       { contextWindow: 128000, maxTokens: 4096 },
+  'gpt-3.5-turbo':     { contextWindow: 16385, maxTokens: 4096 },
+  'glm-4-flash':       { contextWindow: 128000, maxTokens: 4096 },
+  'glm-4-air':         { contextWindow: 128000, maxTokens: 4096 },
+  'glm-4':             { contextWindow: 128000, maxTokens: 4096 },
+  'glm-4-long':        { contextWindow: 1000000, maxTokens: 4096 },
+  'moonshot-v1-8k':    { contextWindow: 8000, maxTokens: 4096 },
+  'moonshot-v1-32k':   { contextWindow: 32000, maxTokens: 4096 },
+  'moonshot-v1-128k':  { contextWindow: 128000, maxTokens: 4096 },
+  'qwen-turbo':        { contextWindow: 128000, maxTokens: 8192 },
+  'qwen-plus':         { contextWindow: 128000, maxTokens: 8192 },
+  'qwen-max':          { contextWindow: 32000, maxTokens: 8192 },
+  'qwen-long':         { contextWindow: 1000000, maxTokens: 6000 },
+  'doubao-pro-32k':    { contextWindow: 32000, maxTokens: 4096 },
+  'doubao-lite-32k':   { contextWindow: 32000, maxTokens: 4096 },
+  'deepseek-ai/DeepSeek-V3':    { contextWindow: 64000, maxTokens: 8192 },
+  'Qwen/Qwen2.5-72B-Instruct': { contextWindow: 32768, maxTokens: 4096 },
+  'THUDM/glm-4-9b-chat':        { contextWindow: 32768, maxTokens: 4096 },
 };
 function getModelMeta(modelName) {
-  return MODEL_META[modelName] || { contextWindow: 128000, maxOutput: 16384 };
+  return MODEL_META[modelName] || { contextWindow: 128000, maxTokens: 16384 };
 }
 
 function normalizeBaseUrl(url) {
@@ -4420,7 +4506,8 @@ const AI_TASK_DEFAULTS = {
   default: { maxTokens: 3072, timeoutMs: 45000 },
   question: { maxTokens: 2400, timeoutMs: 45000 },
   material: { maxTokens: 4096, timeoutMs: 75000 },
-  review: { maxTokens: 1800, timeoutMs: 45000 }
+  review: { maxTokens: 1800, timeoutMs: 45000 },
+  grading: { maxTokens: 4096, timeoutMs: 45000, temperature: 0.3 }
 };
 
 function extractAIText(value) {
@@ -4448,20 +4535,20 @@ async function callAI(messages, jsonMode = true, options = {}) {
   const meta = getModelMeta(cfg ? cfg.model : '');
   const profile = AI_TASK_DEFAULTS[options.task] || AI_TASK_DEFAULTS.default;
   const requestedMaxTokens = Number(options.maxTokens) > 0 ? Number(options.maxTokens) : profile.maxTokens;
-  const requestMaxTokens = Math.min(requestedMaxTokens, meta.maxOutput || profile.maxTokens);
+  const requestMaxTokens = Math.min(requestedMaxTokens, meta.maxTokens || profile.maxTokens);
   const requestTimeoutMs = Number(options.timeoutMs) > 0
     ? Math.min(Number(options.timeoutMs), 120000)
     : profile.timeoutMs;
   if (!cfg) throw new Error('API 未配置，请先在设置中选择提供商并填写 API Key');
   const url = apiUrl(cfg.baseUrl, 'chat/completions');
   const t0 = Date.now();
-  console.log(`[AI] → 请求开始 | 模型=${cfg.model} | maxTokens=${requestMaxTokens} | 超时=${Math.round(requestTimeoutMs/1000)}s | jsonMode=${jsonMode} | 消息数=${messages.length}`);
+  console.warn(`[AI] → 请求开始 | 模型=${cfg.model} | maxTokens=${requestMaxTokens} | 超时=${Math.round(requestTimeoutMs/1000)}s | jsonMode=${jsonMode} | 消息数=${messages.length}`);
 
   async function attempt(msgs, useJsonMode) {
     const body = {
       model: cfg.model,
       messages: msgs,
-      temperature: cfg.temperature,
+      temperature: profile.temperature ?? cfg.temperature ?? 0.7,
       max_tokens: requestMaxTokens
     };
     if (useJsonMode) body.response_format = { type: 'json_object' };
@@ -4478,7 +4565,7 @@ async function callAI(messages, jsonMode = true, options = {}) {
   }
 
   let resp = await attempt(messages, jsonMode);
-  console.log(`[AI] ← 响应 | HTTP ${resp.status} | 耗时=${((Date.now()-t0)/1000).toFixed(1)}s`);
+  console.warn(`[AI] ← 响应 | HTTP ${resp.status} | 耗时=${((Date.now()-t0)/1000).toFixed(1)}s`);
 
   if (jsonMode && !resp.ok && resp.status === 400) {
     let errDetail = '';
@@ -4521,7 +4608,13 @@ async function callAI(messages, jsonMode = true, options = {}) {
     const hint = hints[resp.status] || `HTTP ${resp.status}`;
     throw new Error(`${hint}：${detail.slice(0, 300)}`);
   }
-  const data = await resp.json();
+  let data;
+  try {
+    data = await resp.json();
+  } catch (jsonErr) {
+    const rawText = await resp.text().catch(() => '');
+    throw new Error(`AI 响应非 JSON (HTTP ${resp.status}): ${rawText.slice(0, 200)}`);
+  }
   let content = readAIResponseContent(data);
   if (!content) {
     console.warn('[AI] ⚠ API 响应数据:', JSON.stringify(data).slice(0, 500));
@@ -4550,7 +4643,7 @@ async function callAI(messages, jsonMode = true, options = {}) {
       } catch {}
     }
   }
-  console.log(`[AI] ✓ 完成 | 总耗时=${((Date.now()-t0)/1000).toFixed(1)}s | 内容长度=${content.length}字符`);
+  console.warn(`[AI] ✓ 完成 | 总耗时=${((Date.now()-t0)/1000).toFixed(1)}s | 内容长度=${content.length}字符`);
   return content;
 }
 
@@ -4580,6 +4673,12 @@ async function callAIJson(messages, retryInstruction = '', options = {}) {
 
 function parseJSON(resp) {
   if (!resp || typeof resp !== 'string') throw new Error('AI 返回为空');
+  // 0. 先尝试提取 ```json ... ``` 代码块（AI 常见输出格式）
+  const codeBlockMatch = resp.match(/```(?:json|JSON)?\s*\n?([\s\S]*?)```/);
+  if (codeBlockMatch) {
+    const fromBlock = codeBlockMatch[1].trim();
+    try { return JSON.parse(fromBlock); } catch {}
+  }
   let cleaned = resp.trim();
   cleaned = cleaned.replace(/```(?:json|JSON|javascript)?\s*\n?/g, '').replace(/```\s*$/gm, '').trim();
   try { return JSON.parse(cleaned); } catch {}
@@ -4988,7 +5087,7 @@ async function finishLevelTest() {
   const history = testQuestions.map((q,i) => `第${i+1}题: 领域=${q.domain} 难度=${q.level}\n原句: ${q.oral}\n学习者: ${testAnswers[i]}\n参考: ${q.ref}`).join('\n\n');
 
   try {
-    const prompt = `你是规范表达评估专家。根据以下5道测试题和学习者回答综合分析。\n${history}\n\n返回如下 JSON 格式:\n{"overallLevel":"L1或L2或L3","dimensions":{"信息要点":{"score":8,"comment":"评语"},"概括提炼":{"score":7,"comment":"评语"},"表达规范":{"score":6,"comment":"评语"},"逻辑结构":{"score":5,"comment":"评语"}},"weakDomains":["薄弱领域1"],"oralWordHabits":["高频口语词1"],"suggestedDifficulty":"L2","suggestedFocus":"建议重点"}`;
+    const prompt = `你是规范表达评估专家。根据以下5道测试题和学习者回答综合分析。\n${history}\n\n返回如下 JSON 格式（所有 score 必须为 0-10 的整数）:\n{"overallLevel":"L1或L2或L3","dimensions":{"信息要点":{"score":8,"comment":"评语"},"概括提炼":{"score":7,"comment":"评语"},"表达规范":{"score":6,"comment":"评语"},"逻辑结构":{"score":5,"comment":"评语"}},"weakDomains":["薄弱领域1"],"oralWordHabits":["高频口语词1"],"suggestedDifficulty":"L2","suggestedFocus":"建议重点"}`;
     const resp = await callAI([{role:'system',content:AI_SYSTEM_BASE+' 所有 string 字段值（含 dimensions[*].comment、suggestedFocus、weakDomains、oralWordHabits 等）必须用简体中文，不要混入英文或拼音术语。'},{role:'user',content:prompt}]);
     D.profile = parseJSON(resp);
     D.profile.generatedAt = new Date().toISOString();
@@ -5036,14 +5135,15 @@ async function aiSubmitAnswer(userAnswer) {
 【批改要求】
 1. 先逐条核对考核点、找出具体问题，最后才打分，不要在分析之前定分。
 2. corrections 只挑最影响效果的 1-4 条，按严重程度排序。original 必须逐字摘录学习者答案原文（将用于在原文中高亮定位，不得改写或概括）；reason 说清这个表达在公文语境里具体差在哪、为什么建议的写法更好，禁止只写"更规范""更正式"。
-3. 评分锚点：9-10=可直接当参考答案；7-8=基本规范、仅个别用词或句式瑕疵；5-6=有明显口语残留或信息缺损；≤4=大半未达规范表达。四个维度（每个都要给 score 和一句话 comment，comment 说清这个分数主要扣在哪）——信息要点：信息是否完整准确、有无曲解原意；概括提炼：用最少的字传达最多的有效信息；表达规范：有无口语词、句式是否公文式；逻辑结构：语句通顺、逻辑衔接自然。
+3. 评分锚点：9-10=可直接当参考答案；7-8=基本规范、仅个别用词或句式瑕疵；5-6=有明显口语残留或信息缺损；≤4=大半未达规范表达。所有 score 字段必须为 0-10 的整数。四个维度（每个都要给 score 和一句话 comment，comment 说清这个分数主要扣在哪）——信息要点：信息是否完整准确、有无曲解原意；概括提炼：用最少的字传达最多的有效信息；表达规范：有无口语词、句式是否公文式；逻辑结构：语句通顺、逻辑衔接自然。
+score：总评分，0-10 的整数。score 必须等于四个维度分的算术平均值（四舍五入取整）。reasoning 字段中先写出评分依据，然后给出 score。
 4. overallComment 用一两句话点名本答案最主要的问题，禁止"整体不错""表达较为流畅"式开场。
 5. demoRewrite：在学习者答案基础上做最小改动，保留其结构和信息，只把不规范处改成规范表达，让学习者看到"自己这句该怎么写"。
 6. nextFocus：从本题暴露的实际错误出发归纳一条可迁移做法——先点明本题错在哪，再给通用做法（如"本题你把'啥也不管'写成'管理不到位'，漏掉了主体；今后遇到口语化指控，先问'谁该做什么没做'，补出主体再概括"）。
 
 【返回严格 JSON，字段顺序即分析顺序】
-{"corrections":[{"original":"学习者答案逐字片段","suggestion":"建议改法","reason":"具体原因"}],"dimensions":{"信息要点":{"score":0,"comment":"评语"},"概括提炼":{"score":0,"comment":"评语"},"表达规范":{"score":0,"comment":"评语"},"逻辑结构":{"score":0,"comment":"评语"}},"score":0,"overallComment":"点名最主要问题的一两句话","demoRewrite":"基于学习者答案的最小改动规范版","nextFocus":"从本题错误归纳的可迁移技巧"}`;
-    const resp = await callAI([{role:'system',content:AI_SYSTEM_BASE+' 所有 string 字段值必须用简体中文，不要混入英文或拼音术语。corrections[*].original 必须是学习者答案中逐字摘录的片段。nextFocus 必须从本题学习者的实际错误出发归纳成可迁移的通用技巧，先点明本题错在哪、再给通用做法；禁止脱离本题错误的空泛建议。'},{role:'user',content:prompt}]);
+{"corrections":[{"original":"学习者答案逐字片段","suggestion":"建议改法","reason":"具体原因"}],"dimensions":{"信息要点":{"score":7,"comment":"评语"},"概括提炼":{"score":7,"comment":"评语"},"表达规范":{"score":7,"comment":"评语"},"逻辑结构":{"score":7,"comment":"评语"}},"overallComment":"点名最主要问题的一两句话","demoRewrite":"基于学习者答案的最小改动规范版","nextFocus":"从本题错误归纳的可迁移技巧","reasoning":"先简述评分依据再给出分数","score":7}`;
+    const resp = await callAI([{role:'system',content:AI_SYSTEM_BASE+' 所有 string 字段值必须用简体中文，不要混入英文或拼音术语。corrections[*].original 必须是学习者答案中逐字摘录的片段。nextFocus 必须从本题学习者的实际错误出发归纳成可迁移的通用技巧，先点明本题错在哪、再给通用做法；禁止脱离本题错误的空泛建议。'},{role:'user',content:prompt}], true, {task:'grading'});
     const result = parseJSON(resp);
     if (!isCurrent()) return;
 
@@ -5054,7 +5154,9 @@ async function aiSubmitAnswer(userAnswer) {
     flushPersist();
   } catch(e) {
     if (!isCurrent()) return;
-    showToast('AI 批改失败：' + e.message);
+    $('#practiceMode').classList.remove('reviewing');
+    $('#btnRewriteSubmit').disabled = false; $('#btnRewriteSubmit').textContent = '提交';
+    showToast('AI 批改失败，答案已保留，请重试');
     console.error('aiSubmitAnswer error:', e);
     // AI-only 模式不生成离线替代结果，保留用户答案等待重试。
   } finally {
@@ -5101,14 +5203,14 @@ function normalizeDims(dims) {
     if (!a.comment && v && typeof v === 'object' && v.comment) a.comment = v.comment;
   });
   const out = {};
-  Object.entries(acc).forEach(([k, a]) => { out[k] = { score: Math.round(a.sum / a.n * 10) / 10, comment: a.comment }; });
+  Object.entries(acc).forEach(([k, a]) => { out[k] = { score: Math.max(0, Math.min(10, Math.round(a.sum / a.n))), comment: a.comment }; });
   return out;
 }
 // 历史记录只存回顾所需的最小 AI 结果：分数/四维/总评/批注。
 // 逐句 units 与示范改写占大头且历史页用不到，不入库（新写入与旧数据迁移共用，幂等）。
 function slimAiResult(result) {
   if (!result || typeof result !== 'object') return result;
-  const slim = { score: Number(result.score) || null, dimensions: normalizeDims(result.dimensions), overall: result.overall || result.overallComment || '' };
+  const slim = { score: clampScore(result.score), dimensions: normalizeDims(result.dimensions), overall: result.overall || result.overallComment || '' };
   if (Array.isArray(result.corrections)) slim.corrections = result.corrections;
   return slim;
 }
@@ -5138,7 +5240,7 @@ function updateProfileFromResult(result) {
   }
   if (!Array.isArray(D.profile.recentScores)) D.profile.recentScores = [];
   // hid 关联本次历史记录，重新作答/撤回时按它回滚
-  D.profile.recentScores.push({ hid: pendingHistoryId != null ? pendingHistoryId : undefined, score: Number(result.score) || 0, dims: normalizeDims(result.dimensions) });
+  D.profile.recentScores.push({ hid: pendingHistoryId != null ? pendingHistoryId : undefined, score: clampScore(result.score), dims: normalizeDims(result.dimensions) });
   if (D.profile.recentScores.length > 20) D.profile.recentScores.shift();
   recomputeProfileWindow();
   if (result.nextFocus) D.profile.suggestedFocus = result.nextFocus;
@@ -5157,13 +5259,13 @@ function recomputeProfileWindow() {
     const vals = recent.map(r => dimScoreOf(r.dims?.[k])).filter(Number.isFinite);
     let comment = '';
     for (let i = recent.length - 1; i >= 0 && !comment; i--) comment = recent[i].dims?.[k]?.comment || '';
-    dims[k] = { score: vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length * 10) / 10 : 0, comment };
+    dims[k] = { score: vals.length ? Math.max(0, Math.min(10, Math.round(vals.reduce((a, b) => a + b, 0) / vals.length))) : 0, comment };
   });
   D.profile.dimensions = dims;
   // 综合水平按近 N 题均分
-  const scores = recent.map(r => Number(r.score)).filter(Number.isFinite);
+  const scores = recent.map(r => clampScore(r.score)).filter(Number.isFinite);
   const avgScore = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
-  D.profile.avgScore = Math.round(avgScore * 10) / 10;
+  D.profile.avgScore = Math.round(avgScore);
   D.profile.overallLevel = avgScore >= 8 ? 'L3' : avgScore >= 5 ? 'L2' : 'L1';
   // 薄弱领域随每次批改自动重算：低于 7 分的维度取最弱 2 个（出题与画像同步更新）
   D.profile.weakDomains = PROFILE_DIMS.filter(k => dims[k].score > 0 && dims[k].score < 7).sort((a, b) => dims[a].score - dims[b].score).slice(0, 2);
@@ -5196,7 +5298,7 @@ function profileTrend(recent) {
   if (!hasDims) {
     // 回退到总分比较（兼容旧记录）
     const avgOf = arr => {
-      const v = arr.map(r => Number(r.score)).filter(Number.isFinite);
+      const v = arr.map(r => clampScore(r.score)).filter(Number.isFinite);
       return v.length ? v.reduce((a, b) => a + b, 0) / v.length : NaN;
     };
     const a = avgOf(last), b = avgOf(prev);
@@ -5273,7 +5375,7 @@ function showOnlineCompare(q, userAnswer, result) {
     return `<div class="dim-card"><div class="dc-head"><span class="dc-name">${k}</span><span class="dc-score">${v.score}</span></div><div class="dc-def">${DIM_DEFS[k]}</div>${v.comment ? `<div class="dc-comment">${esc(v.comment)}</div>` : ''}</div>`;
   }).join('');
 
-  const scoreVal = Number(result.score) || 0;
+  const scoreVal = clampScore(result.score);
 
   $('#compareMode').innerHTML = `
     <div class="verdict">
@@ -5292,8 +5394,7 @@ function showOnlineCompare(q, userAnswer, result) {
       ${result.demoRewrite ? `<div style="font-size:12.5px;color:var(--muted);margin:2px 0 6px">示范改写 · 在你的句子上最小改动</div><div class="ref-body show" style="margin:0 0 8px">${esc(result.demoRewrite)}</div>` : ''}
       <div class="ref-collapse" id="refToggle">参考答案 ▾</div>
       <div class="ref-body" id="refBody">${esc(q.ref)}</div>
-      <div class="dim-cards">${dimsHtml}</div>
-      ${rubricHtml()}
+      <details class="compare-detail-section" style="margin:8px 0"><summary style="cursor:pointer;font-size:14px;color:var(--muted);padding:4px 0">展开维度评分 ▾</summary><div class="dim-cards">${dimsHtml}</div>${rubricHtml()}</details>
       ${result.nextFocus ? `<div class="next-focus-tip">${esc(result.nextFocus)}</div>` : ''}
       <div class="action-row">
         <button class="btn btn-text" id="btnRetryPractice" type="button">重新作答</button>
@@ -5316,7 +5417,7 @@ let _pendingRetryAnswer = ''; // 事件委托用：当前批改对照的原始�
 
 function recordOnlineResult(userAnswer, result) {
   const oralWords = countOralWords(userAnswer); // 用户作答里的口语词（替代仅收画像高频词）
-  const rec = { id: Date.now()+Math.random(), date: new Date().toISOString(), mode: 'online', question: currentQ, userAnswer, score: result.score, aiScore: slimAiResult(result), selfRating: null, oralWords };
+  const rec = { id: Date.now()+Math.random(), date: new Date().toISOString(), mode: 'online', question: currentQ, userAnswer, score: clampScore(result.score), aiScore: slimAiResult(result), selfRating: null, oralWords };
   pushHistory(rec);
   pendingHistoryId = rec.id;
   renderSessionStats();
@@ -5527,7 +5628,7 @@ function renderArchive() {
 function renderArchiveStats() {
   const total = D.history.length;
   const aiScored = D.history.filter(h => h.score != null && (h.trainingType !== 'summary' || h.aiScore));
-  const aiAvg = aiScored.length > 0 ? (aiScored.reduce((s,h) => s + h.score, 0) / aiScored.length).toFixed(1) : '--';
+  const aiAvg = aiScored.length > 0 ? (aiScored.reduce((s,h) => s + clampScore(h.score), 0) / aiScored.length).toFixed(1) : '--';
   const selfScored = D.history.filter(h => h.selfRating != null);
   const selfAvg = selfScored.length > 0 ? (selfScored.reduce((s,h) => s + h.selfRating, 0) / selfScored.length).toFixed(1) : '--';
   $('#statTotal').textContent = total;
@@ -5571,12 +5672,12 @@ function renderRadar(dimensions) {
     axes += `<line class="radar-axis" x1="${cx}" y1="${cy}" x2="${x}" y2="${y}"/>`;
     const [lx, ly] = pt(i, R + 22);
     labels += `<text class="radar-label" x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle">${esc(k)}</text>`;
-    const score = Math.max(0, Math.min(10, Number(v.score) || 0));
+    const score = Math.max(0, Math.min(10, Math.round(Number(v.score) || 0)));
     const [vx, vy] = pt(i, R + 22);
     labels += `<text class="radar-val" x="${vx}" y="${vy + 11}" text-anchor="middle" dominant-baseline="middle">${score}</text>`;
   });
   const dataPts = dims.map(([k, v], i) => {
-    const score = Math.max(0, Math.min(10, Number(v.score) || 0));
+    const score = Math.max(0, Math.min(10, Math.round(Number(v.score) || 0)));
     return pt(i, R * score / 10).join(',');
   }).join(' ');
   return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${grid}${axes}<polygon class="radar-poly" points="${dataPts}"/>${labels}</svg>`;
@@ -5655,7 +5756,7 @@ function renderProfile() {
   const op = computeOfflinePortrait();
   if (op) {
     const dimsHtml = Object.entries(op.dimensions).map(([k,v]) => {
-      const sc = Number(v.score) || 0;
+      const sc = Math.max(0, Math.min(10, Math.round(Number(v.score) || 0)));
       return `<div class="dim-item"><span class="dim-name">${esc(k)}</span><span><span class="dim-score">${sc}</span><span class="dim-bar"><span class="dim-fill" style="width:${sc*10}%"></span></span></span></div>`;
     }).join('');
     const radar = Object.keys(op.dimensions).length >= 3 ? `<div class="radar-wrap">${renderRadar(op.dimensions)}</div>` : '';
@@ -5724,10 +5825,10 @@ function renderHistory() {
     const dateStr = `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
     let scoreTxt;
     if (h.trainingType === 'summary') {
-      if (h.score != null && Number.isFinite(Number(h.score))) scoreTxt = Number(h.score) + '/10';
+      if (h.score != null && Number.isFinite(Number(h.score))) scoreTxt = clampScore(h.score) + '/10';
       else scoreTxt = '对照';
     } else if (h.score != null && Number.isFinite(Number(h.score))) {
-      scoreTxt = Number(h.score) + '/10';
+      scoreTxt = clampScore(h.score) + '/10';
     } else if (h.selfRating != null) {
       scoreTxt = '★'.repeat(h.selfRating) + '☆'.repeat(5 - h.selfRating);
     } else {
@@ -6061,7 +6162,8 @@ async function testApiConnection() {
       signal: timeoutSignal(15000)
     });
     if (resp.ok) {
-      const data = await resp.json();
+      let data;
+      try { data = await resp.json(); } catch (jsonErr) { throw new Error('API 测试响应非 JSON：' + (await resp.text().catch(() => '')).slice(0, 200)); }
       const reply = data.choices?.[0]?.message?.content || '';
       resultEl.innerHTML = `<span style="color:var(--success)">连接成功 · 模型：${esc(model)} · 回复：${esc(reply.slice(0,30))}</span>`;
       saveSettings();
@@ -6159,7 +6261,8 @@ async function fetchModels(baseUrl, apiKey, provider, opts = {}) {
       fail(msg, auto ? `<span style="color:var(--zhu)">${esc(msg)}，可在「模型」处手动输入。</span>` : null);
       return;
     }
-    const data = await resp.json();
+    let data;
+    try { data = await resp.json(); } catch (jsonErr) { throw new Error('模型列表响应非 JSON：' + (await resp.text().catch(() => '')).slice(0, 200)); }
     const models = (data.data || data.models || data || []).map(m => typeof m === 'string' ? m : (m.id || m.name || '')).filter(Boolean).sort();
     if (models.length === 0) { fail('未获取到模型列表'); return; }
     // 优先保留当前界面选择，其次已保存配置
@@ -6574,7 +6677,7 @@ document.addEventListener('selectionchange', () => {
     }
     if (modelVal) {
       const meta = getModelMeta(modelVal);
-      const outLimit = meta.maxOutput || 16384;
+      const outLimit = meta.maxTokens || 16384;
       const inputEl = $('#setMaxTokens');
       inputEl.value = outLimit;
       inputEl.dataset.maxOutput = outLimit;
@@ -6866,7 +6969,7 @@ async function umGeneratePractice() {
   btn.disabled = true; btn.textContent = '生成中…';
   const resultBox = $('#umGenerateResult');
   resultBox.classList.add('hidden');
-  console.log(`[AI] 材料生成开始 | 材料长度=${text.length}字 | 方向=${dir} | 模型=${cfg.model}`);
+  console.warn(`[AI] 材料生成开始 | 材料长度=${text.length}字 | 方向=${dir} | 模型=${cfg.model}`);
   try {
     const systemPrompt = AI_SYSTEM_BASE + `\n\n你现在需要根据用户提供的材料，生成一道${dir === 'summary' ? '概括训练' : '规范改写'}练习题。
 要求：
@@ -7136,10 +7239,10 @@ function showBootError(msg) {
 setTimeout(() => {
   const bl = document.getElementById('bootLoader');
   if (bl && !bl.classList.contains('done')) {
-    console.warn('[boot] 超时(8s) 强制放行');
+    console.warn('[boot] 超时(5s) 强制放行');
     bl.classList.add('done');
   }
-}, 8000);
+}, 5000);
 
 (async function boot() {
   const slowTimer = setTimeout(() => bootStatus('数据较多，仍在加载，请稍候…'), 6000);
@@ -7157,6 +7260,10 @@ setTimeout(() => {
       showPracticeQuestion();
     }
     hideBootLoader();
+    // 首次用户未配置 API 时自动弹出设置抽屉
+    if (!getApiConfig() && (!D.history || D.history.length === 0)) {
+      setTimeout(() => openDrawer(), 1000);
+    }
   } catch (e) {
     console.error('初始化失败', e);
     showBootError('纸墨未备，请刷新重试');

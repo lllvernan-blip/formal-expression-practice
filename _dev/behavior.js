@@ -7,6 +7,7 @@
  * 与 check.js（语法/ID 引用）、_validate.js（题库结构）互补，覆盖两条最脆弱的行为语义：
  *   1) 题库末尾切片选择规则：SUMMARY_BANK = SUMMARY_BANK.slice(-N)
  *      —— 有效题库必须恰好是声明数组的末尾 N 条，ID 不重复、关键字段齐全。
+ *      若切片语句已被移除（SUMMARY_BANK 为空、AI-only 模式），有效题库即声明数组本身。
  *   2) API 配置迁移与合并的「本地优先」语义：
  *      mergeApiSettingsFromFile / migrateApiSettingsFromLegacy
  *      —— 本地已有配置时文件/旧版配置被忽略；仅本地为空时补充；默认 maxTokens=2000 视为空。
@@ -127,25 +128,27 @@ try {
 assert(Array.isArray(fullBank), "SUMMARY_BANK 声明为数组（共 " + fullBank.length + " 条；允许为空）");
 
 // 抽取真实的切片语句原文并原样执行（改成 slice(0,N) 等都会在此失配）
+// 若切片语句已被移除（SUMMARY_BANK 为空、AI-only 模式），有效题库即声明数组本身。
 const sliceStmt = /SUMMARY_BANK\s*=\s*SUMMARY_BANK\.slice\(\s*-\s*(\d+)\s*\)\s*;/.exec(html);
-if (!sliceStmt) fatal("未找到末尾切片语句 `SUMMARY_BANK = SUMMARY_BANK.slice(-N);`（选择规则可能已被改动）");
-const N = Number(sliceStmt[1]);
-assert(N >= 1, "切片数量 N=" + N + " 为正整数");
-
 let activeBank;
-try {
-  activeBank = Function("SUMMARY_BANK", '"use strict";' + sliceStmt[0] + " return SUMMARY_BANK;")(fullBank.slice());
-} catch (e) {
-  fatal("执行切片语句失败：" + e.message);
+if (sliceStmt) {
+  const N = Number(sliceStmt[1]);
+  assert(N >= 1, "切片数量 N=" + N + " 为正整数");
+  try {
+    activeBank = Function("SUMMARY_BANK", '"use strict";' + sliceStmt[0] + " return SUMMARY_BANK;")(fullBank.slice());
+  } catch (e) {
+    fatal("执行切片语句失败：" + e.message);
+  }
+  const expectLen = Math.min(N, fullBank.length);
+  assert(activeBank.length === expectLen, "有效题库数量 " + activeBank.length + " === min(N, 总数) = " + expectLen);
+  // 必须恰好是声明数组的末尾 N 条（逐条同引用比较）
+  const tail = fullBank.slice(fullBank.length - expectLen);
+  const isTail = activeBank.every((q, i) => q === tail[i]);
+  assert(isTail, "有效题库恰好是声明数组的末尾 " + expectLen + " 条（末尾选择语义）");
+} else {
+  assert(fullBank.length === 0, "无切片语句时 SUMMARY_BANK 为空数组（AI-only 模式，共 " + fullBank.length + " 条）");
+  activeBank = fullBank.slice();
 }
-
-const expectLen = Math.min(N, fullBank.length);
-assert(activeBank.length === expectLen, "有效题库数量 " + activeBank.length + " === min(N, 总数) = " + expectLen);
-
-// 必须恰好是声明数组的末尾 N 条（逐条同引用比较）
-const tail = fullBank.slice(fullBank.length - expectLen);
-const isTail = activeBank.every((q, i) => q === tail[i]);
-assert(isTail, "有效题库恰好是声明数组的末尾 " + expectLen + " 条（末尾选择语义）");
 
 const ids = activeBank.map(q => q && q.id);
 assert(new Set(ids).size === ids.length, "有效题 ID 无重复：" + ids.join(", "));

@@ -367,7 +367,8 @@ select:hover { border-color:var(--line-strong); }
 .free-select-popover .selection-action.cancel { color:var(--zhu); background:rgba(176,58,40,.1); }
 .free-select-popover .selection-action:hover { filter:brightness(.92); }
 .free-select-panel { margin-top:10px; }
-.free-select-material { font-family:var(--font-serif); font-size:16px; line-height:2.3; text-align:justify; border-left:3px solid var(--zhu); padding:4px 4px 4px 16px; user-select:text; -webkit-user-select:text; touch-action:manipulation; cursor:text; }
+.free-select-material { display:none; }
+.summary-material.free-select-source { user-select:text; -webkit-user-select:text; touch-action:manipulation; cursor:text; }
 .free-select-selected { margin-top:12px; display:grid; gap:6px; }
 .free-selected-seg { cursor:pointer; padding:7px 9px; border-left:3px solid var(--gold); background:var(--hi); color:#5a3a10; line-height:1.6; }
 .free-selected-seg:hover { opacity:.82; }
@@ -1646,7 +1647,7 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
               <div class="sum-step-head"><span class="summary-step-no">01</span><span>圈出支撑答案的事实</span><span class="step-hint">排除背景、例子和修辞性描述</span></div>
               <div class="sum-segs" id="sumSegs"></div>
               <div id="freeSelectPanel" class="free-select-panel hidden">
-                <div class="step-hint">通读时可直接划选事实；出现侧边操作条后，勾选加入练习，叉号放弃本次选区</div>
+                <div class="step-hint">通读时可直接划选事实；选区附近出现操作条后，勾选加入练习，叉号放弃本次选区</div>
                 <blockquote class="free-select-material" id="freeSelectMaterial"></blockquote>
                 <div id="freeSelectPopover" class="free-select-popover" role="dialog" aria-label="选区操作">
                   <button id="btnFreeSelectAccept" class="selection-action accept" type="button" aria-label="加入练习选段" title="加入练习选段">✓</button>
@@ -3721,7 +3722,7 @@ function updateFreeSelectTools() {
   const panel = $('#freeSelectPanel');
   const tools = $('#freeSelectTools');
   if (!panel || !tools) return;
-  placeFreeSelectPanel(free);
+  placeFreeSelectPanel();
   panel.classList.toggle('hidden', !free);
   tools.classList.toggle('visible', free);
   const review = free && isWrongBookReviewMode();
@@ -3741,7 +3742,7 @@ function hideFreeSelectionPopover() {
 function isSelectionInMaterial() {
   const sel = window.getSelection();
   if (!sel || !sel.rangeCount) return false;
-  const el = $('#freeSelectMaterial');
+  const el = isFreeSelectMode() ? $('#summaryMaterial') : $('#freeSelectMaterial');
   return el && el.contains(sel.getRangeAt(0).commonAncestorContainer);
 }
 function showFreeSelectionPopover() {
@@ -3755,21 +3756,28 @@ function showFreeSelectionPopover() {
   const range = selection.getRangeAt(0);
   const rect = range.getBoundingClientRect();
   if (!rect || (!rect.width && !rect.height)) return;
+  const isMobile = window.innerWidth <= 600 || navigator.maxTouchPoints > 0;
   pop.classList.remove('below');
   pop.classList.add('visible');
   const popWidth = pop.offsetWidth;
   const popHeight = pop.offsetHeight;
   const gap = 10;
-  let left = rect.right + gap;
-  let top = rect.top + (rect.height - popHeight) / 2;
-  // 选区右侧放不下时翻到左侧；上下都逼仄时再退回选区下方。
-  if (left + popWidth > window.innerWidth - 8) left = rect.left - popWidth - gap;
-  if (left < 8) {
-    left = Math.max(8, Math.min(window.innerWidth - popWidth - 8, rect.left));
-    top = rect.bottom + gap;
-    if (top + popHeight > window.innerHeight - 8) {
-      top = rect.top - popHeight - gap;
-      pop.classList.add('below');
+  let left;
+  let top;
+  if (isMobile) {
+    // 手机端放在选区上方或下方居中，不占选区侧边。
+    left = Math.max(8, Math.min(window.innerWidth - popWidth - 8, rect.left + (rect.width - popWidth) / 2));
+    top = rect.top - popHeight - gap;
+    if (top < 8) { top = rect.bottom + gap; pop.classList.add('below'); }
+  } else {
+    // 桌面端放在选区侧边，避免遮住材料文字。
+    left = rect.right + gap;
+    top = rect.top + (rect.height - popHeight) / 2;
+    if (left + popWidth > window.innerWidth - 8) left = rect.left - popWidth - gap;
+    if (left < 8) {
+      left = Math.max(8, Math.min(window.innerWidth - popWidth - 8, rect.left));
+      top = rect.bottom + gap;
+      if (top + popHeight > window.innerHeight - 8) { top = rect.top - popHeight - gap; pop.classList.add('below'); }
     }
   }
   pop.style.left = `${Math.max(8, left)}px`;
@@ -3888,14 +3896,14 @@ function renderSumRecap() {
 function readableMaterialHtml(text) {
   return String(text || '').trim().split(/\n\s*\n+/).filter(Boolean).map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('');
 }
-function placeFreeSelectPanel(free) {
-  const panel = $('#freeSelectPanel');
-  const target = free ? $('#summaryMode .sum-panel[data-p="0"] .card-material') : $('#summaryMode .sum-panel[data-p="1"]');
-  if (panel && target && panel.parentElement !== target) target.appendChild(panel);
+function placeFreeSelectPanel() {
+  const pop = $('#freeSelectPopover');
+  const host = $('#summaryMode');
+  if (pop && host && pop.parentElement !== host) host.appendChild(pop);
 }
 function renderSummaryQuestion(q) {
   if (!q) {
-    placeFreeSelectPanel(false);
+    placeFreeSelectPanel();
     $('#answerInput').disabled = true;
     $('#btnSubmit').disabled = true;
     $('#summaryType').textContent = '概括训练 · 请导入材料';
@@ -3919,8 +3927,9 @@ function renderSummaryQuestion(q) {
   $('#summaryLevel').textContent = q.level;
   $('#summaryContext').textContent = q.context;
   $('#summaryMaterial').innerHTML = readableMaterialHtml(q.material);
-  $('#freeSelectMaterial').innerHTML = readableMaterialHtml(q.material);
-  placeFreeSelectPanel(isFreeSelectMode());
+  $('#summaryMaterial').classList.toggle('free-select-source', isFreeSelectMode());
+  $('#freeSelectMaterial').innerHTML = '';
+  placeFreeSelectPanel();
   // Source line
   let srcHtml = `来源：${esc(q.source)}`;
   if (q.sourceUrl) srcHtml += ` · <a href="${esc(q.sourceUrl)}" target="_blank" rel="noopener">原文链接</a>`;
@@ -6457,9 +6466,9 @@ function initApp() {
     $('#sumSelCount').textContent = String(sumSelectedSlices().length);
   });
   const finishFreeSelection = () => setTimeout(syncFreeSelectionFromWindow, 0);
-  $('#freeSelectMaterial').addEventListener('mouseup', finishFreeSelection);
-  $('#freeSelectMaterial').addEventListener('touchend', finishFreeSelection, { passive: true });
-  $('#freeSelectMaterial').addEventListener('contextmenu', e => e.preventDefault());
+  $('#summaryMaterial').addEventListener('mouseup', finishFreeSelection);
+  $('#summaryMaterial').addEventListener('touchend', finishFreeSelection, { passive: true });
+  $('#summaryMaterial').addEventListener('contextmenu', e => e.preventDefault());
   document.addEventListener('selectionchange', () => {
     if (isFreeSelectMode() && isFreeSelectionStep()) setTimeout(syncFreeSelectionFromWindow, 0);
   });
@@ -6479,7 +6488,7 @@ function initApp() {
   });
   document.addEventListener('pointerdown', e => {
     const pop = $('#freeSelectPopover');
-    const material = $('#freeSelectMaterial');
+    const material = $('#summaryMaterial');
     if (pop?.classList.contains('visible') && !pop.contains(e.target) && !material?.contains(e.target)) hideFreeSelectionPopover();
   });
   $('#sumBtnNext').addEventListener('click', () => {

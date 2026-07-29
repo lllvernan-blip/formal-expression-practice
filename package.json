@@ -1,0 +1,21 @@
+{
+  "name": "biaozhun-biaoda-lianxi",
+  "version": "1.0.0",
+  "private": true,
+  "description": "单页 HTML 练习工具：读材料 → 找点 → 归类 → 概括 → 规范表达。无构建体系，无运行时依赖。",
+  "main": "规范表达练习.html",
+  "entryPoints": {
+    "app": {
+      "path": "规范表达练习.html",
+      "role": "主应用入口"
+    },
+    "deploy": {
+      "path": "index.html",
+      "role": "部署入口"
+    }
+  },
+  "scripts": {
+    "check": "node _dev/check.js",
+    "validate": "node _dev/_validate.js"
+  }
+}

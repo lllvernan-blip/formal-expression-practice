@@ -2,21 +2,29 @@
 "use strict";
 
 /*
- * 题库校验器（可移植·可复跑）
+ * AI 生成题目 schema 校验器（可移植·可复跑）
+ *
+ * 背景：内置题库 SUMMARY_BANK 已清空（概括训练改为“我的材料”+ AI 生成，
+ * 用户材料不写入 SUMMARY_BANK），本脚本不再校验 HTML 内联题库，
+ * 改为校验 AI 生成题目的同款 schema——与主应用 umGeneratePractice 产出的
+ * generated 对象、运行时 validateUserMaterialResult 的硬约束保持同一口径：
+ *
+ *   { type, level, prompt, material, slices:[{text,punct,valid,point,reason}],
+ *     points:[{name,keys,acceptable}], buildChain, answerStructure, ref }
  *
  * 用法（从项目根目录）：
- *   node _dev/_validate.js                # 默认校验主应用 规范表达练习.html 内联的 SUMMARY_BANK
- *   node _dev/_validate.js <路径>         # 校验指定文件
+ *   node _dev/_validate.js                # 默认校验 _dev/sample-question.json（虚构示例夹具）
+ *   node _dev/_validate.js <路径>         # 校验指定 .json / .js 文件
  *
  * <路径> 支持：
- *   - .html 文件：自动抽取 `var SUMMARY_BANK = [...]` 数组
- *   - .js / .json 文件：整段视为数组字面量，或裸露的逗号分隔对象列表
- *     （兼容旧的 _dev/batch-*.js 分批稿）
+ *   - .json：单个题目对象，或题目对象数组
+ *   - .js  ：数组/对象字面量，或裸露的逗号分隔对象列表
+ *   - 数组元素若带 generated 字段（“我的材料”导出项），自动取其 generated 校验
  *
  * 路径解析顺序：绝对路径 → 相对当前工作目录 → 相对项目根目录。
  * 脚本内不含任何绝对路径，可在任意机器上直接运行。
  *
- * 退出码：有 ERROR 时为 1，否则为 0（可用于 CI / 提交前校验）。
+ * 退出码：有 ERROR 或校验对象为空时为 1，否则为 0（可用于 CI / 提交前校验）。
  */
 
 const fs = require("fs");
@@ -24,7 +32,7 @@ const path = require("path");
 
 // 项目根 = _dev/ 的上一级，独立于当前工作目录
 const PROJECT_ROOT = path.resolve(__dirname, "..");
-const DEFAULT_TARGET = path.join(PROJECT_ROOT, "规范表达练习.html");
+const DEFAULT_TARGET = path.join(__dirname, "sample-question.json");
 
 function resolveInput(arg) {
   if (!arg) return DEFAULT_TARGET;
@@ -34,76 +42,52 @@ function resolveInput(arg) {
   return path.resolve(PROJECT_ROOT, arg); // 回退到相对项目根
 }
 
-// 从任意文本中抽取 `var SUMMARY_BANK = [ ... ]` 数组字面量（跳过字符串与注释做括号配平）
-function extractSummaryBank(src) {
-  const m = /var\s+SUMMARY_BANK\s*=\s*\[/.exec(src);
-  if (!m) throw new Error("未找到 SUMMARY_BANK 声明（期望 `var SUMMARY_BANK = [`）");
-  const open = m.index + m[0].length - 1; // '[' 的位置
-  let depth = 0, inStr = null, esc = false, inLine = false, inBlock = false;
-  for (let i = open; i < src.length; i++) {
-    const c = src[i], n = src[i + 1];
-    if (inLine) { if (c === "\n") inLine = false; continue; }
-    if (inBlock) { if (c === "*" && n === "/") { inBlock = false; i++; } continue; }
-    if (inStr) {
-      if (esc) esc = false;
-      else if (c === "\\") esc = true;
-      else if (c === inStr) inStr = null;
-      continue;
-    }
-    if (c === "/" && n === "/") { inLine = true; i++; continue; }
-    if (c === "/" && n === "*") { inBlock = true; i++; continue; }
-    if (c === '"' || c === "'" || c === "`") { inStr = c; continue; }
-    if (c === "[") depth++;
-    else if (c === "]") { depth--; if (depth === 0) return src.slice(open, i + 1); }
-  }
-  throw new Error("SUMMARY_BANK 数组未正确闭合");
-}
-
-function loadBank(file) {
+function loadQuestions(file) {
   const raw = fs.readFileSync(file, "utf8");
-  const ext = path.extname(file).toLowerCase();
-  let literal;
-  if (ext === ".html" || /var\s+SUMMARY_BANK\s*=/.test(raw)) {
-    literal = extractSummaryBank(raw);
-  } else {
-    const trimmed = raw.trim();
-    // 已是数组字面量则直接用，否则视为裸露对象列表（兼容 batch-*.js）
-    literal = trimmed.startsWith("[") ? trimmed : "[" + raw + "]";
-  }
-  let arr;
+  const trimmed = raw.trim();
+  let parsed;
   try {
-    arr = Function('"use strict";return (' + literal + ");")();
-  } catch (e) {
-    throw new Error("解析题库失败：" + e.message);
+    parsed = JSON.parse(trimmed);
+  } catch (_) {
+    // 非严格 JSON：按 JS 字面量解析（数组/对象，或裸露对象列表）
+    const literal = trimmed.startsWith("[") || trimmed.startsWith("{")
+      ? trimmed
+      : "[" + trimmed + "]";
+    try {
+      parsed = Function('"use strict";return (' + literal + ");")();
+    } catch (e) {
+      throw new Error("解析输入失败（既不是 JSON 也不是合法字面量）：" + e.message);
+    }
   }
-  if (!Array.isArray(arr)) throw new Error("题库解析结果不是数组");
-
-  // 主应用保留历史题目作底稿，运行时通过末尾 slice 选择有效题。
-  // 校验器也必须校验同一批题，否则会把已下线题目和重复编号算进去。
-  if (ext === ".html") {
-    const active = /SUMMARY_BANK\s*=\s*SUMMARY_BANK\.slice\(\s*-\s*(\d+)\s*\)/.exec(raw);
-    if (active) arr = arr.slice(-Number(active[1]));
-  }
-  return arr;
+  const list = Array.isArray(parsed) ? parsed : [parsed];
+  // “我的材料”导出项带 generated 字段时，取其 generated 作为校验对象
+  return list.map(item =>
+    item && typeof item === "object" && item.generated && typeof item.generated === "object"
+      ? item.generated
+      : item
+  );
 }
 
-// 结构性必填字段（缺失 → ERROR）
-const REQUIRED_FIELDS = [
-  "id", "type", "level", "domain", "context", "material", "slices", "points", "ref",
-  "buildChain", "answerStructure", "source", "sourceDate", "sourceType",
-  "topicTags", "timeliness", "timelinessNote"
-];
-// 元数据字段（缺失 → WARNING，允许查不到而留空）
-const OPTIONAL_FIELDS = ["sourceUrl"];
+// 结构性必填字段（缺失 → ERROR），对应 AI 生成协议的硬约束
+const REQUIRED_FIELDS = ["type", "level", "prompt", "material", "slices", "points", "ref"];
+// 协议中要求生成、但运行时可空缺省的字段（缺失 → WARNING）
+const OPTIONAL_FIELDS = ["domain", "buildChain", "answerStructure"];
+
+const TYPE_ENUM = ["问题", "做法", "成效", "变化", "经验"];
+const LEVEL_ENUM = ["L1", "L2", "L3"];
 
 function validate(arr) {
   const errors = [];
   const warnings = [];
 
   arr.forEach((q, qi) => {
-    const id = q && q.id !== undefined ? q.id : `#${qi}`;
+    const id = `#${qi + 1}`;
+    if (!q || typeof q !== "object") {
+      errors.push(`[${id}] 不是有效的题目对象`);
+      return;
+    }
 
-    // 0. 必填字段
+    // 0. 必填/可选字段
     REQUIRED_FIELDS.forEach(f => {
       if (q[f] === undefined) errors.push(`[${id}] 缺少必填字段：${f}`);
     });
@@ -111,57 +95,65 @@ function validate(arr) {
       if (q[f] === undefined) warnings.push(`[${id}] 缺少可选字段：${f}`);
     });
 
-    // 1. 切片必须是完整材料中的有效片段，并按材料顺序出现。
-    // 当前题型会保留背景和过渡段，但 slices 只记录用于训练的语义片段，
-    // 因此不能再要求 slices 拼接后逐字还原全文。
-    if (Array.isArray(q.slices) && typeof q.material === "string") {
-      q.slices.forEach((s, si) => {
-        const text = String(s.text || "");
-        const pos = text ? q.material.indexOf(text) : 0;
-        if (text && pos < 0) {
-          errors.push(`[${id}] 切片 ${si} 未在材料中找到：${text.substring(0, 30)}${text.length > 30 ? "…" : ""}`);
+    // 1. 枚举口径（协议约束，偏差 → WARNING）
+    if (q.type !== undefined && !TYPE_ENUM.includes(q.type)) {
+      warnings.push(`[${id}] type「${q.type}」不在协议枚举内（${TYPE_ENUM.join("|")}）`);
+    }
+    if (q.level !== undefined && !LEVEL_ENUM.includes(q.level)) {
+      warnings.push(`[${id}] level「${q.level}」不在协议枚举内（${LEVEL_ENUM.join("|")}）`);
+    }
+
+    // 2. 材料：非空；短于运行时最低输入 50 字则提示
+    const material = typeof q.material === "string" ? q.material : "";
+    if (q.material !== undefined && !material.trim()) {
+      errors.push(`[${id}] material 为空`);
+    } else if (material && material.length < 50) {
+      warnings.push(`[${id}] 材料长度 ${material.length} 低于运行时最低输入 50 字`);
+    }
+
+    // 3. 切片与采分点：非空数组（对应运行时 requirePracticeData）
+    const slices = Array.isArray(q.slices) ? q.slices : [];
+    const points = Array.isArray(q.points) ? q.points : [];
+    if (q.slices !== undefined && !slices.length) errors.push(`[${id}] slices 为空，无法生成可练习题目`);
+    if (q.points !== undefined && !points.length) errors.push(`[${id}] points 为空，无法生成可练习题目`);
+
+    // 4. 每个切片：text 必须逐字来自材料；valid 切片 point 索引合法；无效切片要有 reason
+    slices.forEach((s, si) => {
+      const text = String((s && s.text) || "").trim();
+      if (!text) {
+        errors.push(`[${id}] 切片 ${si} 缺少 text`);
+      } else if (material && material.indexOf(text) < 0) {
+        errors.push(`[${id}] 切片 ${si} 未在材料中找到：${text.substring(0, 30)}${text.length > 30 ? "…" : ""}`);
+      }
+      if (s && s.valid === true) {
+        if (s.point === undefined) {
+          errors.push(`[${id}] 切片 ${si} 标记有效却缺少 point 索引`);
+        } else if (!Number.isInteger(s.point) || s.point < 0 || s.point >= points.length) {
+          errors.push(`[${id}] 切片 ${si} 的 point 索引 ${s.point} 越界（应为 0-${points.length - 1} 的整数）`);
         }
-      });
-    }
-
-    // 2. 材料长度 300-600（提示）：按当前叙事型训练材料的实际长度设定
-    if (typeof q.material === "string") {
-      const mlen = q.material.length;
-      if (mlen < 300 || mlen > 600) warnings.push(`[${id}] 材料长度 ${mlen} 超出 300-600 区间`);
-    }
-
-    // 3. 切片 point 索引与有效性
-    if (Array.isArray(q.slices)) {
-      const pointCount = Array.isArray(q.points) ? q.points.length : 0;
-      q.slices.forEach((s, si) => {
-        if (s.valid && s.point !== undefined) {
-          if (s.point < 0 || s.point >= pointCount) {
-            errors.push(`[${id}] 切片 ${si} 的 point 索引 ${s.point} 越界（应为 0-${pointCount - 1}）`);
-          }
+      } else if (s) {
+        if (!s.reason) errors.push(`[${id}] 切片 ${si} 标记无效却缺少 reason 说明`);
+        if (s.point !== undefined && s.point !== -1) {
+          warnings.push(`[${id}] 切片 ${si} 无效切片的 point 应为 -1，实际为 ${s.point}`);
         }
-        if (s.valid && s.point === undefined) errors.push(`[${id}] 切片 ${si} 标记有效却缺少 point 索引`);
-        if (!s.valid && !s.reason) errors.push(`[${id}] 切片 ${si} 标记无效却缺少 reason 说明`);
-      });
+      }
+    });
 
-      // 5. 切片数量 8-14（提示）：叙事材料允许保留更多语义片段
-      const sc = q.slices.length;
-      if (sc < 8 || sc > 14) warnings.push(`[${id}] 切片数量 ${sc} 超出 8-14 区间`);
+    // 5. 每个采分点：name 必填；keys / acceptable 按协议应为非空数组
+    points.forEach((p, pi) => {
+      if (!p || !String(p.name || "").trim()) errors.push(`[${id}] 采分点 ${pi} 缺少 name`);
+      if (!p || !Array.isArray(p.keys) || !p.keys.length) warnings.push(`[${id}] 采分点 ${pi} 缺少 keys 关键词数组`);
+      if (!p || !Array.isArray(p.acceptable)) warnings.push(`[${id}] 采分点 ${pi} 缺少 acceptable 同义表达数组`);
+    });
 
-      // 6. 干扰项数量 1-3（提示）：材料紧凑时允许只有一个干扰项
-      const invalidCount = q.slices.filter(s => !s.valid).length;
-      if (invalidCount < 1 || invalidCount > 3) warnings.push(`[${id}] 干扰项数量 ${invalidCount} 超出 1-3 区间`);
+    // 6. 采分点数量 3-5（提示）：协议约定 L1=3 个、L2=4 个核心点
+    if (points.length && (points.length < 3 || points.length > 5)) {
+      warnings.push(`[${id}] 采分点数量 ${points.length} 超出 3-5 区间`);
     }
 
-    // 4. 参考答案长度 60-320（提示）：答案保留总括句、概括词和具体事实
-    if (typeof q.ref === "string") {
-      const rlen = q.ref.length;
-      if (rlen < 60 || rlen > 320) warnings.push(`[${id}] 参考答案长度 ${rlen} 超出 60-320 区间`);
-    }
-
-    // 7. 要点数量 3-4（提示）
-    if (Array.isArray(q.points)) {
-      const pc = q.points.length;
-      if (pc < 3 || pc > 4) warnings.push(`[${id}] 要点数量 ${pc} 超出 3-4 区间`);
+    // 7. 参考答案：过短提示（协议要求“总括句 + 编号 + 概括词 + 具体事实”）
+    if (typeof q.ref === "string" && q.ref.trim() && q.ref.trim().length < 30) {
+      warnings.push(`[${id}] 参考答案长度 ${q.ref.trim().length} 过短，难以覆盖总括句+分点结构`);
     }
   });
 
@@ -171,7 +163,7 @@ function validate(arr) {
 function printDistribution(arr) {
   const byType = {};
   arr.forEach(q => {
-    const t = q.type || "未知";
+    const t = (q && q.type) || "未知";
     byType[t] = byType[t] || [];
     byType[t].push(q);
   });
@@ -179,11 +171,10 @@ function printDistribution(arr) {
   Object.keys(byType).forEach(t => {
     const list = byType[t];
     const levels = {};
-    list.forEach(q => { const l = q.level || "?"; levels[l] = (levels[l] || 0) + 1; });
+    list.forEach(q => { const l = (q && q.level) || "?"; levels[l] = (levels[l] || 0) + 1; });
     const lvStr = Object.keys(levels).sort().map(l => `${l}:${levels[l]}`).join(" ");
     console.log(`  ${t}: ${list.length} (${lvStr})`);
   });
-  console.log(`ID: ${arr.map(q => q.id).join(", ")}`);
   console.log("");
 }
 
@@ -199,9 +190,16 @@ function main() {
 
   let arr;
   try {
-    arr = loadBank(target);
+    arr = loadQuestions(target);
   } catch (e) {
     console.error(e.message);
+    process.exitCode = 1;
+    return;
+  }
+
+  // 空输入视为失败：门禁必须有校验对象，避免空转
+  if (!arr.length) {
+    console.error("校验对象为空：输入中未找到任何题目对象。");
     process.exitCode = 1;
     return;
   }

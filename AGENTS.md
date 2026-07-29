@@ -7,7 +7,8 @@
 ## 文件边界
 
 - `规范表达练习.html`：主应用入口。
-- `index.html`：部署入口。
+- `index.html`：部署入口，只是指向主文件的纯跳转桩（meta refresh + 兜底链接）。双入口同步口径：不往 `index.html` 写业务逻辑或复制主文件内容；主文件改名时同步改跳转目标；`node _dev/check.js` 默认校验双入口并检查跳转桩一致性。
+- `package.json`：机器可读的入口声明（`entryPoints.app` = `规范表达练习.html`，`entryPoints.deploy` = `index.html`），仅作元数据，不引入依赖或构建体系；与本节文字口径保持一致。
 - `README.md`：项目使用说明。
 - `项目方案与进度.md`：当前产品机制、技术边界和进度。
 - `回归验收清单.md`：修改后的验收步骤和状态口径。
@@ -35,7 +36,9 @@
 ```bash
 node _dev/check.js
 node _dev/_validate.js
+node _dev/behavior.js
+node _dev/storage.js
 git diff --check
 ```
 
-报告中区分“已写入代码”“静态检查通过”“浏览器实测”和“尚未实测”。
+报告中区分“已写入代码”“静态检查通过”“浏览器实测”和“尚未实测”。`node _dev/check.js` 默认同时覆盖 `规范表达练习.html` 和 `index.html`（语法、id 引用、跳转桩同步）。`node _dev/behavior.js` 断言题库切片规则与 API 配置「本地优先」合并/迁移语义；`node _dev/storage.js` 断言 localStorage 键名迁移、敏感字段过滤、v1 数据迁移和用户材料 CRUD（两者均从 HTML 原样抽取被测代码在 node:vm 沙箱执行，零依赖）。

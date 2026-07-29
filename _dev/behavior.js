@@ -10,7 +10,7 @@
  *      若切片语句已被移除（SUMMARY_BANK 为空、AI-only 模式），有效题库即声明数组本身。
  *   2) API 配置迁移与合并的「本地优先」语义：
  *      mergeApiSettingsFromFile / migrateApiSettingsFromLegacy
- *      —— 本地已有配置时文件/旧版配置被忽略；仅本地为空时补充；默认 maxTokens=2000 视为空。
+ *      —— 本地已有配置时文件/旧版配置被忽略；仅本地为空时补充；默认 maxTokens（defaultApiSettings.maxTokens）视为空。
  *
  * 被测代码从 规范表达练习.html 中原样抽取，在 node:vm 沙箱内执行（假 localStorage / D），
  * 不复制实现，HTML 内语义被改动时断言即失败。

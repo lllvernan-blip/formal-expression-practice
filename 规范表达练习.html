@@ -3647,7 +3647,7 @@ let _materialScrollTop = -1;
 let _appMode = 'practice'; // 'practice' | 'wrongBookReview'
 
 // ── 错题本 ──
-function updateWrongBook(qId, isWrong, reasons, question) {
+function updateWrongBook(qId, isWrong, reasons, question, trainingType) {
   if (!D.wrongBook) D.wrongBook = {};
   if (isWrong) {
     const prev = D.wrongBook[qId];
@@ -3656,6 +3656,7 @@ function updateWrongBook(qId, isWrong, reasons, question) {
       lastWrong: new Date().toISOString(),
       count: (prev ? prev.count : 0) + 1,
       reasons: reasons,
+      trainingType: trainingType || 'summary',
       question: question ? JSON.parse(JSON.stringify(question)) : (prev?.question || null)
     };
     showToast('✗ 已加入错题本');
@@ -4046,14 +4047,82 @@ async function showSummaryQuestion(force = false) {
     showSummaryQuestion();
     return;
   }
+  // 错题本复盘：根据训练类型分流
+  if (forceWrong) {
+    const wrongEntry = D.wrongBook[q.id];
+    const tType = wrongEntry?.trainingType || 'summary';
+    if (tType === 'rewrite') {
+      showRewriteReview(q, wrongEntry);
+      return;
+    }
+  }
   renderSummaryQuestion(q || null);
 }
 
+// ── 错题本复盘：改写题型 ──
+function showRewriteReview(q, wrongEntry) {
+  currentQ = q;
+  const prevRecord = [...(D.history || [])].reverse().find(h => String(h.question?.id) === String(q.id) && h.userAnswer);
+  const prevAnswer = prevRecord?.userAnswer || '';
+  const prevResult = prevRecord?.aiScore || null;
 
+  showQuestionOnDesk(q);
+  $('#rewriteAnswerInput').value = prevAnswer;
+  updateCharCount();
 
+  // ── 公共初始化：两个分支共享的 UI 状态重置 ──
+  $('#summaryMode').classList.add('hidden');
+  $('#practiceMode').classList.remove('hidden');
+  $('#practiceMode').classList.remove('reviewing'); // 先清除旧状态，防止连续复盘残留
+  $('#compareMode').classList.add('hidden');        // 默认隐藏批改区
 
-
-
+  if (prevResult && prevResult.score != null) {
+    const scoreVal = clampScore(prevResult.score);
+    const dims = prevResult.dimensions || {};
+    const dimsHtml = PROFILE_DIMS.filter(k => dims[k]).map(k => {
+      const v = dims[k];
+      return `<div class="dim-card"><div class="dc-head"><span class="dc-name">${k}</span><span class="dc-score">${v.score}</span></div><div class="dc-def">${DIM_DEFS[k]}</div>${v.comment ? `<div class="dc-comment">${esc(v.comment)}</div>` : ''}</div>`;
+    }).join('');
+    const correctionsHtml = (prevResult.corrections || []).map((c, i) =>
+      `<div class="anno-card"><span class="anno-sugg">${esc(c.suggestion || '')}</span><br><span class="anno-reason">${esc(c.reason || '')}</span></div>`
+    ).join('');
+    $('#compareMode').innerHTML = `
+      <div class="verdict">
+        <div class="verdict-head">
+          <div class="verdict-eyebrow">错题复盘 · 改写</div>
+          <div class="score-head">
+            <div class="score-circle"><svg class="score-ring" viewBox="0 0 92 70" aria-hidden="true"><path d="M10 40 C5 22 28 7 48 8 C72 9 89 24 85 41 C81 58 57 66 39 63 C19 60 3 56 10 40 Z"/></svg><span class="score-num"><span class="score-value" data-score="${scoreVal}">0</span><span class="score-max">/ 10</span></span></div>
+            <div class="score-text">
+              <div class="verdict-title" style="font-size:17px">${esc(prevResult.overall || '上次批改结果')}</div>
+              <div class="band-tag">${scoreBand(scoreVal).label}档 · ${scoreBand(scoreVal).desc}</div>
+            </div>
+          </div>
+        </div>
+        ${correctionsHtml || ''}
+        <details class="compare-detail-section" style="margin:8px 0"><summary style="cursor:pointer;font-size:14px;color:var(--muted);padding:4px 0">展开维度评分 ▾</summary><div class="dim-cards">${dimsHtml}</div></details>
+        <div class="verdict-grid">
+          <figure class="verdict-col"><figcaption>你的答案<span class="fig-en">YOURS</span></figcaption><div class="verdict-text user grid-paper">${esc(prevAnswer)}</div></figure>
+          <figure class="verdict-col"><figcaption>参考答案<span class="fig-en">REFERENCE</span></figcaption><div class="verdict-text ref">${esc(q.ref)}</div></figure>
+        </div>
+        <div class="action-row">
+          <button class="btn btn-text" id="btnRetryPractice" type="button">重新作答</button>
+          <button class="btn btn-ink" id="btnNextPractice" type="button">下一题 →</button>
+        </div>
+      </div>
+    `;
+    $('#practiceMode').classList.add('reviewing');
+    $('#compareMode').classList.remove('hidden');
+    _pendingRetryAnswer = prevAnswer;
+    setTimeout(() => {
+      const scoreEl = $('#compareMode .score-value');
+      if (scoreEl) animateScore(scoreEl, scoreEl.dataset.score);
+      $('#rewriteAnswerInput').focus();
+    }, 50);
+  } else {
+    showToast('错题复盘：请重新作答');
+    // UI 已由公共初始化重置，textarea 可用、批改区已隐藏
+  }
+}
 
 function showPracticeQuestion() {
   return getTrainingMode() === 'summary' ? showSummaryQuestion() : showRewriteQuestion();
@@ -4223,7 +4292,7 @@ ${pointsDesc}
   updateWrongBook(q.id, aiWrong, aiWrong ? [
     hasMissing ? '漏点' : '',
     aiScore < 7 ? '综合分偏低(' + aiScore + ')' : ''
-  ].filter(Boolean) : [], q);
+  ].filter(Boolean) : [], q, 'summary');
 
   // ── 画像更新（概括 AI 路径）──
   updateProfileFromResult(result);
@@ -5150,6 +5219,11 @@ score：总评分，0-10 的整数。score 必须等于四个维度分的算术�
     showOnlineCompare(requestQ, userAnswer, result);
     recordOnlineResult(userAnswer, result);
 
+    // ── 错题本更新（改写 AI 路径）──
+    const aiScore = (result && result.score != null) ? clampScore(result.score) : 10;
+    const rewriteWrong = aiScore < 7;
+    updateWrongBook(requestQ.id, rewriteWrong, rewriteWrong ? ['综合分偏低(' + aiScore + ')'] : [], requestQ, 'rewrite');
+
     updateProfileFromResult(result);
     flushPersist();
   } catch(e) {
@@ -5417,7 +5491,7 @@ let _pendingRetryAnswer = ''; // 事件委托用：当前批改对照的原始�
 
 function recordOnlineResult(userAnswer, result) {
   const oralWords = countOralWords(userAnswer); // 用户作答里的口语词（替代仅收画像高频词）
-  const rec = { id: Date.now()+Math.random(), date: new Date().toISOString(), mode: 'online', question: currentQ, userAnswer, score: clampScore(result.score), aiScore: slimAiResult(result), selfRating: null, oralWords };
+  const rec = { id: Date.now()+Math.random(), date: new Date().toISOString(), mode: 'online', trainingType: 'rewrite', question: currentQ, userAnswer, score: clampScore(result.score), aiScore: slimAiResult(result), selfRating: null, oralWords };
   pushHistory(rec);
   pendingHistoryId = rec.id;
   renderSessionStats();
@@ -6441,7 +6515,14 @@ function initApp() {
       setAppMode('wrongBookReview');
       const stats = getWrongReasonStats();
       const topReason = stats.length ? stats[0].reason : '';
-      const msg = topReason ? `只练错题模式：${n} 道错题 · 最需关注：${topReason}` : `只练错题模式：${n} 道错题`;
+      const wbTypes = Object.values(D.wrongBook || {}).map(e => e.trainingType || 'summary');
+      const summaryCount = wbTypes.filter(t => t === 'summary').length;
+      const rewriteCount = wbTypes.filter(t => t === 'rewrite').length;
+      let typeInfo = '';
+      if (summaryCount && rewriteCount) typeInfo = `（概括 ${summaryCount} · 改写 ${rewriteCount}）`;
+      else if (rewriteCount) typeInfo = '（改写）';
+      else if (summaryCount) typeInfo = '（概括）';
+      const msg = topReason ? `只练错题模式：${n} 道错题${typeInfo} · 最需关注：${topReason}` : `只练错题模式：${n} 道错题${typeInfo}`;
       showToast(msg);
       showSummaryQuestion(true);
     } else {
@@ -6636,7 +6717,7 @@ document.addEventListener('selectionchange', () => {
     if (!btn) return;
     switch (btn.id) {
       case 'btnRetryPractice': retryPracticeAnswer(_pendingRetryAnswer); break;
-      case 'btnNextPractice': showPracticeQuestion(); $('#desk').scrollIntoView({behavior:'smooth'}); break;
+      case 'btnNextPractice': (isWrongBookReviewMode() ? showSummaryQuestion(true) : showPracticeQuestion()); $('#desk').scrollIntoView({behavior:'smooth'}); break;
       case 'btnSummaryRetry': {
         if (pendingHistoryId != null) {
           rollbackProfileResult(pendingHistoryId);

@@ -279,6 +279,7 @@ a { color: var(--dai); }
   box-shadow:0 3px 12px -4px rgba(142,44,29,.55);
 }
 .btn-ink:hover:not(:disabled) { background:var(--zhu-deep); transform:translateY(-1px); }
+.btn-danger { background:var(--zhu); color:var(--paper); border:none; padding:8px 20px; border-radius:var(--radius); font-weight:600; cursor:pointer; }
 .btn-line { background:transparent; color:var(--ink-soft); border-color:var(--line-strong); }
 .btn-line:hover:not(:disabled) { color:var(--ink); border-color:var(--ink-50); }
 .btn-text { background:none; border:none; color:var(--muted); padding:11px 10px; letter-spacing:.12em; }
@@ -744,11 +745,6 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
 @keyframes ringDraw { to { stroke-dashoffset:0; } }
 @keyframes scorePop { 0% { opacity:0; transform:scale(.55); } 55% { opacity:1; transform:scale(1.14); } 100% { opacity:1; transform:scale(1); } }
 .score-text { min-width:0; }
-/* 离线概括训练：用过程统计替代伪精确分数环 */
-.offline-overview { display:flex; flex-direction:column; gap:5px; min-width:148px; padding:4px 0; }
-.ov-row { display:flex; align-items:baseline; gap:8px; font-size:13px; line-height:1.5; }
-.ov-k { color:var(--ink-soft); min-width:2.5em; flex-shrink:0; }
-.ov-v { color:var(--ink); font-weight:600; }
 /* 离线答案对照：过程统计概览（替代分数环，不在离线模式显示伪精确总分）*/
 .offline-overview { display:flex; flex-direction:column; gap:5px; min-width:150px; padding:6px 0; }
 .ov-row { display:flex; align-items:baseline; gap:8px; font-size:13px; line-height:1.4; }
@@ -1695,14 +1691,14 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
             <div class="sum-panel hidden" data-p="2">
               <div class="sum-step-head"><span class="summary-step-no">02</span><span>归类 · 命名</span><span class="step-hint">把事实分组，写出上位概括词</span></div>
               <p style="font:11px/1.4 var(--font-sans);color:var(--muted);margin:6px 0 0">一个事实可以支撑多个要点，也可只归入一个</p>
-              <details class="sum-peek" open><summary>回看材料原文</summary><div class="sum-peek-body" id="sumPeekMat"></div></details>
+              <details class="sum-peek"><summary>回看材料原文</summary><div class="sum-peek-body" id="sumPeekMat"></div></details>
               <div class="sum-count-row"><label for="sumGroupCount">采分点数量</label><input type="number" id="sumGroupCount" min="1" max="8" placeholder="如 4"></div>
               <div id="sumGroups"></div>
             </div>
             <!-- Panel 3: 成句 -->
             <div class="sum-panel hidden" data-p="3">
               <div class="sum-step-head"><span class="summary-step-no">03</span><label for="answerInput">成句 · 写出完整概括</label></div>
-              <details class="sum-peek" open><summary>回看材料原文</summary><div class="sum-peek-body" id="sumPeekMat2"></div></details>
+              <details class="sum-peek"><summary>回看材料原文</summary><div class="sum-peek-body" id="sumPeekMat2"></div></details>
               <div class="sum-recap" id="sumRecap"></div>
               <div class="grid-zone">
                 <div class="grid-wrap">
@@ -2606,7 +2602,7 @@ function confirmDialog({ title='确认操作', message='', confirmText='确认',
         <p class="confirm-msg" style="display:none"></p>
         <div class="confirm-actions">
           <button class="btn btn-line" type="button" data-act="cancel"></button>
-          <button class="${danger ? 'btn-danger' : 'btn btn-ink'}" type="button" data-act="ok"${danger ? ' style="background:var(--zhu);color:var(--paper);border:none;padding:8px 20px;border-radius:var(--radius);font-weight:600"' : ''}></button>
+          <button class="${danger ? 'btn-danger' : 'btn btn-ink'}" type="button" data-act="ok"></button>
         </div>
       </div>`;
     document.body.appendChild(overlay);
@@ -3858,6 +3854,10 @@ async function judgeReviewSelection() {
     _freeSelectionText = '';
     window.getSelection()?.removeAllRanges();
     updateFreeSelectTools();
+    // AI 复盘结果已写入 resultEl，保持工具栏可见以展示结果
+    if (resultEl.textContent.trim()) {
+      $('#freeSelectTools').classList.add('visible');
+    }
   } catch (e) {
     if (isCurrent()) { resultEl.className = 'free-select-result invalid'; resultEl.textContent = `复盘判断失败：${e.message || '请稍后重试'}`; }
   } finally {

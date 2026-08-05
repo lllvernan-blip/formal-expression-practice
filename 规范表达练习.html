@@ -312,6 +312,21 @@ a { color: var(--dai); }
 }
 .tip-bar .tip-close:hover { color:var(--zhu); background:var(--zhu-soft); }
 
+/* ============ 摸底引导卡（无画像时在练习页展示） ============ */
+.diag-cta {
+  max-width:880px; margin:0 auto 18px;
+  display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  border:1px solid var(--zhu-line); border-radius:var(--radius);
+  background:linear-gradient(135deg, var(--zhu-soft), var(--paper-2));
+  padding:16px 20px;
+}
+.diag-cta .diag-cta-text { flex:1; min-width:220px; }
+.diag-cta .diag-cta-title { font-size:16px; font-weight:800; letter-spacing:.06em; color:var(--ink); margin-bottom:4px; }
+.diag-cta .diag-cta-sub { font-size:12.5px; color:var(--ink-soft); font-family:var(--font-sans); line-height:1.6; }
+.diag-cta .diag-cta-sub b { color:var(--zhu); font-weight:700; }
+.diag-cta .btn { flex:none; }
+@media (max-width:640px){ .diag-cta{ padding:14px 16px; gap:12px; } }
+
 /* ============ 练习（答题卡） ============ */
 .desk-head {
   display:flex; align-items:flex-end; justify-content:space-between; gap:14px; flex-wrap:wrap;
@@ -982,6 +997,9 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
 .hist-domain { font-family:var(--font-sans); font-size:11px; color:var(--dai); border:1px solid var(--dai-line); border-radius:2px; padding:0 6px; flex:none; }
 .hist-text { flex:1; min-width:0; font-size:14px; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .hist-score { flex:none; font-family:var(--font-latin); font-style:italic; font-size:15px; color:var(--zhu); font-weight:600; }
+.hist-src { flex:none; font-family:var(--font-sans); font-size:10px; letter-spacing:.1em; padding:1px 6px; border-radius:2px; }
+.hist-src.src-diag { background:var(--dai-soft); color:var(--dai-deep); border:1px solid var(--dai-line); }
+.hist-hint { flex:1; min-width:0; font-size:12px; color:var(--zhu); font-family:var(--font-sans); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .hist-detail { margin-top:12px; padding:14px 16px; background:var(--paper-2); border:1px solid var(--line); border-radius:var(--radius); font-size:14px; line-height:1.9; display:none; }
 .history-item.open .hist-detail { display:block; animation: riseIn .3s var(--ease-out); }
 .hist-detail .k { font-size:11px; color:var(--muted); font-family:var(--font-sans); letter-spacing:.16em; display:block; margin:10px 0 3px; }
@@ -1346,7 +1364,7 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
 
   /* 摸底：题面在左，稿纸在右，压缩进一屏 */
   #testCard:not(.hidden) { display:grid; grid-template-columns:1fr 1fr; column-gap:36px; align-items:start; }
-  #testCard .test-progress, #testCard .q-meta, #testCard .action-row { grid-column:1 / -1; }
+  #testCard .test-progress, #testCard .q-meta, #testCard .action-row, #testVerdict { grid-column:1 / -1; }
   #testCard .oral { margin-bottom:0; max-height:34vh; overflow-y:auto; }
   #testCard .action-row { margin-top:14px; padding-top:12px; }
 
@@ -1592,15 +1610,25 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
     <section id="panelPractice" class="panel">
       <div id="practiceTip" class="tip-bar hidden"></div>
 
+      <!-- 无画像时的摸底引导卡 -->
+      <div id="diagCta" class="diag-cta hidden">
+        <div class="diag-cta-text">
+          <div class="diag-cta-title">先花 5 题，建一份你的能力画像</div>
+          <div class="diag-cta-sub">AI 逐题批改，结束后给出<b>四维评分、薄弱项和主攻方向</b>；之后出题会更贴合你的弱项。</div>
+        </div>
+        <button class="btn btn-ink" id="btnDiagStart" type="button">开始摸底（5 题）</button>
+      </div>
+
       <!-- 摸底测试 -->
       <div id="testCard" class="hidden">
         <div class="test-progress" id="testProgress"></div>
         <div class="q-meta"><span class="meta-seal">摸底</span><span class="meta-context" id="testContext"></span></div>
         <blockquote class="oral" id="testOral"></blockquote>
-        <div class="manuscript">
+        <div class="manuscript" id="testManuscript">
           <div class="manuscript-label"><span>你的改写</span><span>第 <span id="testNo">1</span> 题 / 共 5 题</span></div>
           <textarea id="testInput" class="grid-paper" rows="6" placeholder="在稿纸上写下你的改写……"></textarea>
         </div>
+        <div id="testVerdict"></div>
         <div class="action-row">
           <button id="btnTestCancel" class="btn btn-text">放弃摸底</button>
           <button id="btnTestSubmit" class="btn btn-ink">提交</button>
@@ -1748,6 +1776,7 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
               <span class="cf-space"></span>
               <button id="btnRewriteSubmit" class="btn btn-ink" disabled>提交</button>
             </div>
+            <div id="rewriteVerdict"></div>
           </div>
         </div>
 
@@ -2041,16 +2070,9 @@ textarea.grid-paper:disabled { opacity:.55; cursor:not-allowed; }
 
       <section class="intro-slide" data-slide="3">
         <div class="slide-eyebrow">03 · 开始练习</div>
-        <h3 class="slide-title">选择你的练习方式</h3>
-        <div class="welcome-opts">
-          <button class="welcome-opt" id="welcomeOffline">
-            <h4><span>01 ·</span> AI 规范改写</h4>
-            <p>配置 API Key 后，由 AI 生成规范改写题目，提交后逐句批改并给出具体修改建议。</p>
-          </button>
-          <button class="welcome-opt" id="welcomeOnline">
-            <h4><span>02 ·</span> AI 概括训练</h4>
-            <p>在“我的材料”中提供自己有权使用的材料，由 AI 生成概括题、切片和采分点后练习。</p>
-          </button>
+        <h3 class="slide-title">选择你的起步方式</h3>
+        <div class="welcome-opts" id="welcomeOpts">
+          <!-- 由 JS 按 API / 材料状态动态渲染主按钮 -->
         </div>
         <p class="slide-note">之后随时可在右上角「设置」中更新 AI 接口配置。</p>
       </section>
@@ -2585,6 +2607,15 @@ function showToast(msg, dur) {
   }
 }
 
+// 长任务等待文案分阶段切换：8s 提醒、20s 安抚，减少盯转圆焦虑
+function stagedWaitText(el, stages) {
+  const timers = [];
+  stages.forEach(([ms, text]) => {
+    timers.push(setTimeout(() => { if (el) el.textContent = text; }, ms));
+  });
+  return () => timers.forEach(clearTimeout);
+}
+
 // 统一确认 modal：替代原生 confirm，返回 Promise<boolean>
 // 用 textContent 填充变量，规避 XSS；Enter 确认 / Esc 或点遮罩取消
 function confirmDialog({ title='确认操作', message='', confirmText='确认', cancelText='取消', danger=false } = {}) {
@@ -2711,6 +2742,7 @@ function switchTab(tab) {
   if (tab === 'scan') renderScanHistory();
   if (tab === 'archive') renderArchive();
   if (tab === 'materials' && !$('#umListView').classList.contains('hidden')) renderUmList();
+  if (tab === 'practice') renderDiagnosticCta();
 }
 
 // INLINE DATA — 词库与题库内联
@@ -3322,7 +3354,8 @@ let _lastDomain = '随机';
 async function confirmDiscardIfDraft() {
   const summaryVisible = !$('#summaryMode').classList.contains('hidden');
   const practiceVisible = !$('#practiceMode').classList.contains('hidden') && !$('#practiceMode').classList.contains('reviewing');
-  const has = (summaryVisible && $('#answerInput').value.trim()) || (practiceVisible && $('#rewriteAnswerInput').value.trim());
+  const rewriteDraft = practiceVisible && !$('#rewriteAnswerInput').disabled && $('#rewriteAnswerInput').value.trim();
+  const has = (summaryVisible && $('#answerInput').value.trim()) || rewriteDraft;
   if (!has) return true;
   return await confirmDialog({ title: '换题将丢弃作答', message: '当前稿纸有内容，换题将丢弃。确定换吗？', confirmText: '换题' });
 }
@@ -3430,14 +3463,17 @@ async function showRewriteQuestion(force = false) {
     } catch(e) {
       if (requestId !== _questionRequestId) return;
       console.warn('AI question generation failed', e);
+      const fe = friendlyAIError(e);
       $('#qDomain').textContent = '生成失败';
       $('#qLevel').textContent = '—';
-      $('#qContext').textContent = 'AI 题目生成失败，请检查接口配置或稍后重试。';
-      $('#questionOral').textContent = e.message || '请稍后重试';
+      $('#qContext').textContent = fe.headline;
+      $('#questionOral').textContent = '';
       $('#rewriteAnswerInput').value = '';
       $('#rewriteAnswerInput').disabled = true;
       $('#btnRewriteSubmit').disabled = true;
-      showToast('AI 出题失败：' + (e.message || '请稍后重试'));
+      $('#rewriteVerdict').innerHTML = `<div style="padding:8px 0"><button class="btn btn-ink btn-sm" id="btnRewriteQRetry" type="button">重新出题</button>${['auth','forbidden','notfound','badrequest'].includes(fe.code) ? ' <button class="btn btn-line btn-sm" id="btnRewriteQSettings" type="button">去设置检查</button>' : ''}</div>`;
+      const r = $('#btnRewriteQRetry'); if (r) r.onclick = () => showRewriteQuestion(true);
+      const s = $('#btnRewriteQSettings'); if (s) s.onclick = () => openDrawer();
     } finally {
       if (requestId !== _questionRequestId) return;
       _questionGenerating = false;
@@ -3547,6 +3583,9 @@ function showQuestionOnDesk(q) {
   $('#rewriteAnswerInput').value = '';
   $('#rewriteAnswerInput').disabled = false;
   $('#btnRewriteSubmit').disabled = true; // 空稿置灰，输入后恢复
+  $('#btnRewriteSubmit').classList.remove('hidden');
+  $('#btnRewriteSubmit').textContent = '提交';
+  $('#rewriteVerdict').innerHTML = '';
   $('#btnRewriteSkip').disabled = false;
   updateCharCount();
   $('#summaryMode').classList.add('hidden');
@@ -3590,6 +3629,8 @@ let isTestMode = false;
 let testAnswers = [];
 let testQuestions = [];
 let testIndex = 0;
+let testResults = []; // 每题的 AI 批改结果，与 testQuestions 对齐（已批改下标上有值）
+const DIAGNOSTIC_KEY = 'formal_expression_diagnostic_v1';
 
 const _countDigitMemo = {};
 const _countOverMemo = {};
@@ -4400,7 +4441,7 @@ async function submitSummary() {
     $('#summaryMode').classList.remove('hidden');
     $('#compareMode').classList.add('hidden');
     sumGoStep(3);
-    showToast('AI 批改失败，已保留当前答案，请重试：' + e.message);
+    showToast(friendlyAIError(e).headline);
   }
   return;
 
@@ -4574,9 +4615,9 @@ function getApiConfig() {
 const AI_TASK_DEFAULTS = {
   default: { maxTokens: 3072, timeoutMs: 45000 },
   question: { maxTokens: 2400, timeoutMs: 45000 },
-  material: { maxTokens: 4096, timeoutMs: 75000 },
+  material: { maxTokens: 8192, timeoutMs: 100000 },
   review: { maxTokens: 1800, timeoutMs: 45000 },
-  grading: { maxTokens: 4096, timeoutMs: 45000, temperature: 0.3 }
+  grading: { maxTokens: 4096, timeoutMs: 60000, temperature: 0.3 }
 };
 
 function extractAIText(value) {
@@ -4629,70 +4670,82 @@ async function callAI(messages, jsonMode = true, options = {}) {
         signal: timeoutSignal(requestTimeoutMs)
       });
     } catch (netErr) {
-      throw new Error(diagnoseFetchError(netErr, cfg.baseUrl, requestTimeoutMs));
+      // 网络层错误（断网/DNS/连接重置/超时）带上 code，外层据此决定是否重试
+      if (netErr && (netErr.name === 'TimeoutError' || netErr.name === 'AbortError')) {
+        throw new AIError('timeout', diagnoseFetchError(netErr, cfg.baseUrl, requestTimeoutMs));
+      }
+      throw new AIError('network', diagnoseFetchError(netErr, cfg.baseUrl, requestTimeoutMs));
     }
   }
 
-  let resp = await attempt(messages, jsonMode);
-  console.warn(`[AI] ← 响应 | HTTP ${resp.status} | 耗时=${((Date.now()-t0)/1000).toFixed(1)}s`);
-
-  if (jsonMode && !resp.ok && resp.status === 400) {
-    let errDetail = '';
-    try { errDetail = await resp.text(); } catch {}
-    if (/response_format|json_object.*not.*support|not.*support.*json_object|不支持.*json/i.test(errDetail)) {
-      resp = await attempt(messages, false);
-    } else {
-      let detail = errDetail;
-      try { const ej = JSON.parse(errDetail); detail = ej.error?.message || ej.message || ej.msg || errDetail; } catch {}
-      throw new Error(`请求参数有误：${detail.slice(0, 300)}`);
-    }
-  }
-
-  // 瞬态错误自动重试（429 限流 / 502 网关 / 503 过载），最多 2 次，指数退避
-  const RETRYABLE = [429, 502, 503];
-  if (!resp.ok && RETRYABLE.includes(resp.status)) {
-    for (let retry = 1; retry <= 2; retry++) {
-      const delay = retry * 1500; // 1.5s, 3s
-      console.warn(`[AI] ⚠ HTTP ${resp.status}，${delay}ms 后第 ${retry} 次重试…`);
-      await new Promise(r => setTimeout(r, delay));
+  // 统一重试：网络瞬断 / 限流(429) / 网关(502,503,504)。指数退避 + 抖动，最多 3 次
+  const RETRYABLE_STATUS = [429, 502, 503, 504];
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  let resp, lastErr;
+  for (let tryN = 0; tryN < 3; tryN++) {
+    try {
       resp = await attempt(messages, jsonMode);
-      if (resp.ok || !RETRYABLE.includes(resp.status)) break;
+      // JSON 模式下 400 且是“不支持 json_object”：降级不带 response_format 重试
+      if (jsonMode && !resp.ok && resp.status === 400) {
+        let errDetail = '';
+        try { errDetail = await resp.text(); } catch {}
+        if (/response_format|json_object.*not.*support|not.*support.*json_object|不支持.*json/i.test(errDetail)) {
+          resp = await attempt(messages, false);
+        } else {
+          lastErr = { status: 400, body: errDetail }; break;
+        }
+      }
+      if (resp.ok) { lastErr = null; break; }
+      if (RETRYABLE_STATUS.includes(resp.status)) {
+        const delay = Math.min(8000, 800 * Math.pow(2, tryN)) + Math.floor(Math.random() * 600);
+        console.warn(`[AI] ⚠ HTTP ${resp.status}，${Math.round(delay)}ms 后第 ${tryN + 1} 次重试…`);
+        if (tryN < 2) { await sleep(delay); continue; }
+      }
+      lastErr = { status: resp.status };
+      try { lastErr.body = await resp.text(); } catch {}
+      break;
+    } catch (e) {
+      lastErr = e;
+      if (isRetryableAIError(e) && tryN < 2) {
+        const delay = Math.min(8000, 1000 * Math.pow(2, tryN)) + Math.floor(Math.random() * 600);
+        console.warn(`[AI] ⚠ ${e.code}，${Math.round(delay)}ms 后第 ${tryN + 1} 次重试…`);
+        await sleep(delay);
+        continue;
+      }
+      throw e;
     }
   }
+  if (!resp) throw lastErr || new AIError('network', 'AI 请求失败');
+  console.warn(`[AI] ← 响应 | HTTP ${resp.status} | 耗时=${((Date.now()-t0)/1000).toFixed(1)}s`);
 
   if (!resp.ok) {
     let detail = '';
     try {
-      const errBody = await resp.text();
+      const errBody = lastErr?.body || '';
       try {
         const errJson = JSON.parse(errBody);
         detail = errJson.error?.message || errJson.message || errJson.msg || errBody;
       } catch { detail = errBody; }
     } catch { detail = '(无法读取响应)'; }
-    const hints = {
-      400: '请求参数有误', 401: 'API Key 无效或已过期', 403: '无权限访问该模型',
-      404: '接口地址或模型不存在', 429: '请求过于频繁或额度不足', 500: '服务端内部错误',
-      502: '网关错误，请稍后重试', 503: '服务暂时不可用'
-    };
-    const hint = hints[resp.status] || `HTTP ${resp.status}`;
-    throw new Error(`${hint}：${detail.slice(0, 300)}`);
+    const codeMap = { 400:'badrequest', 401:'auth', 403:'forbidden', 404:'notfound', 429:'ratelimit', 500:'server', 502:'server', 503:'server', 504:'server' };
+    const code = codeMap[resp.status] || 'unknown';
+    throw new AIError(code, detail ? `${resp.status}：${String(detail).slice(0, 200)}` : `HTTP ${resp.status}`, String(detail || '').slice(0, 400));
   }
   let data;
   try {
     data = await resp.json();
   } catch (jsonErr) {
     const rawText = await resp.text().catch(() => '');
-    throw new Error(`AI 响应非 JSON (HTTP ${resp.status}): ${rawText.slice(0, 200)}`);
+    throw new AIError('jsonparse', `AI 响应非 JSON：${String(rawText).slice(0, 200)}`);
   }
   let content = readAIResponseContent(data);
   if (!content) {
     console.warn('[AI] ⚠ API 响应数据:', JSON.stringify(data).slice(0, 500));
     const choice = data.choices?.[0] || {};
     const message = choice.message || {};
-    const detail = choice.finish_reason === 'length'
-      ? '模型输出达到上限，内容可能被截断'
-      : Object.keys(message).length ? `message 字段为：${Object.keys(message).join(', ')}` : `choice 字段为：${Object.keys(choice).join(', ') || '空'}`;
-    throw new Error(`API 返回格式异常：未取得可用文本（${detail}；顶层字段：${Object.keys(data).join(', ')}）。请检查模型兼容性或换用其他模型。`);
+    const isLength = choice.finish_reason === 'length';
+    const detail = isLength ? '输出达到上限被截断' : (Object.keys(message).length ? `message 字段：${Object.keys(message).join(', ')}` : `choice 字段：${Object.keys(choice).join(', ') || '空'}`);
+    throw new AIError(isLength ? 'truncated' : 'empty', `未取得可用文本（${detail}）。`);
   }
 
   // 切语言自动重试（仅 JSON 模式）
@@ -4728,16 +4781,26 @@ function isEnglishLeak(text) {
 
 async function callAIJson(messages, retryInstruction = '', options = {}) {
   let lastError = null;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const request = attempt === 0 || !retryInstruction
-      ? messages
-      : [...messages, { role: 'user', content: retryInstruction }];
-    if (attempt > 0) console.warn(`[AI] ⚠ JSON 解析失败，第 ${attempt + 1} 次尝试…`);
-    const raw = await callAI(request, true, options);
-    try { return parseJSON(raw); }
-    catch (e) { lastError = e; console.warn(`[AI] ⚠ JSON 解析错误: ${e.message}`); }
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let request = messages;
+    if (attempt > 0) {
+      const hint = lastError?.code === 'truncated' || /截断|truncat/.test(lastError?.message || '')
+        ? '上一次输出在中途被截断，请在保留所有字段的前提下适当精简描述，重新输出完整、可解析的 JSON，不要输出 Markdown 代码围栏。'
+        : (retryInstruction || '上一次返回的 JSON 无法解析，请重新输出完整、严格的 JSON，不要输出 Markdown 代码围栏。');
+      request = [...messages, { role: 'user', content: hint }];
+      console.warn(`[AI] ⚠ JSON 解析失败，第 ${attempt + 1} 次尝试… 原因：${lastError?.message || ''}`);
+    }
+    try {
+      const raw = await callAI(request, true, options);
+      return parseJSON(raw);
+    } catch (e) {
+      lastError = e;
+      // 网络/限流类错误已经在 callAI 内部重试 3 次了；这里只针对“拿到响应但 JSON 不可解析”再换提示词重试
+      if (isRetryableAIError(e)) throw e;
+    }
   }
-  throw new Error('AI 返回的 JSON 不完整或无法解析，请重试。' + (lastError?.message ? `（${lastError.message}）` : ''));
+  const e = classifyAIError(lastError);
+  throw new AIError(e.code === 'unknown' ? 'jsonparse' : e.code, 'AI 返回的内容多次解析失败，请重试或换个模型。' + (lastError?.message ? `（${lastError.message}）` : ''));
 }
 
 function parseJSON(resp) {
@@ -4801,6 +4864,64 @@ function parseJSON(resp) {
     throw new Error('AI 返回内容被截断，可能受模型输出长度限制。请尝试换用其他模型或增大 max_tokens 配置后重试。');
   }
   throw new Error('AI 返回内容无法解析为 JSON，请重试');
+}
+
+// ============================================================
+// AI 调用统一错误处理
+// 错误带 code 字段，UI 层用 friendlyAIError() 翻译成人话；
+// isRetryableAIError 决定是否值得自动重试。
+// ============================================================
+class AIError extends Error {
+  constructor(code, message, detail) {
+    super(message);
+    this.name = 'AIError';
+    this.code = code; // network | timeout | auth | forbidden | notfound | ratelimit | server | badrequest | truncated | empty | jsonparse | fileproto | unknown
+    this.detail = detail || '';
+  }
+}
+
+function isRetryableAIError(err) {
+  const code = err && err.code;
+  return !!code && ['network', 'timeout', 'ratelimit', 'server'].includes(code);
+}
+
+// 把底层错误翻译成一句给人看的话
+function friendlyAIError(err) {
+  const e = classifyAIError(err);
+  const map = {
+    network: '网络连不上，AI 服务没有响应。请检查网络或代理后重试。',
+    timeout: '等太久了，AI 一直没返回。可以重试，或在「设置」里换一个更快的模型。',
+    auth: 'API Key 无效或已过期，请到「设置」检查。',
+    forbidden: '没有权限使用这个模型，请到「设置」换一个模型。',
+    notfound: '模型名或接口地址不对，请到「设置」核对。',
+    ratelimit: '请求太频繁或额度不足，稍等几秒再试。',
+    server: 'AI 服务暂时出问题了，稍后重试通常就好。',
+    badrequest: '请求参数有问题，可能是模型不支持当前设置。请到「设置」检查模型。',
+    truncated: 'AI 这次回答到一半被截断了，已自动重试；若仍失败可换模型或缩短材料。',
+    empty: 'AI 返回的内容是空的，重试一次通常能好。',
+    jsonparse: 'AI 返回的内容没法解析，已自动重试；若多次失败可换个模型。',
+    fileproto: '当前是双击打开网页（file://），浏览器不允许这样调用 AI。请用本地服务方式打开。',
+    unknown: 'AI 调用失败，请重试。'
+  };
+  return { headline: map[e.code] || map.unknown, code: e.code, detail: e.detail || '' };
+}
+
+function classifyAIError(err) {
+  if (err instanceof AIError) return err;
+  const raw = (err && err.message) ? err.message : String(err || '');
+  if (/file:\/\//.test(raw)) return new AIError('fileproto', raw);
+  if ((/timeout|abort/i.test(err && err.name)) || /超时|主动断开/.test(raw)) return new AIError('timeout', raw);
+  if (/无法连接|连不上|Failed to fetch|NetworkError|load failed|network/i.test(raw)) return new AIError('network', raw);
+  if (/API Key|401|Unauthorized|无效.*Key|鉴权|认证失败/.test(raw)) return new AIError('auth', raw);
+  if (/403|Forbidden|无权限/.test(raw)) return new AIError('forbidden', raw);
+  if (/404|Not Found|不存在/.test(raw)) return new AIError('notfound', raw);
+  if (/429|限流|频繁|额度|rate/i.test(raw)) return new AIError('ratelimit', raw);
+  if (/500|502|503|504|网关|内部错误|不可用|服务端/.test(raw)) return new AIError('server', raw);
+  if (/400|参数有误|bad request/i.test(raw)) return new AIError('badrequest', raw);
+  if (/截断|truncat|长度限制|finish_reason.*length|输出达到上限/.test(raw)) return new AIError('truncated', raw);
+  if (/为空|没有可用文本|empty/i.test(raw)) return new AIError('empty', raw);
+  if (/JSON|解析|parse/i.test(raw)) return new AIError('jsonparse', raw);
+  return new AIError('unknown', raw);
 }
 
 function diagnoseFetchError(err, baseUrl, timeoutMs = 60000) {
@@ -4950,6 +5071,8 @@ function retryPracticeAnswer(prevAnswer) {
   markDirty();
   $('#compareMode').classList.add('hidden');
   $('#practiceMode').classList.remove('reviewing');
+  $('#rewriteVerdict').innerHTML = '';
+  $('#btnRewriteSubmit').classList.remove('hidden');
   $('#rewriteAnswerInput').disabled = false;
   $('#btnRewriteSkip').disabled = false;
   replayCardAnim();
@@ -4987,28 +5110,70 @@ function recordSelfRating(q, star) {
 
 // ============================================================
 // 摸底测试（5 题）
+// 每题提交即批改、即入库、即反馈；5 题完成后由 5 次批改结果本地聚合画像，
+// 不再向 AI 发“总评”请求——避免最后一步 JSON 失败导致全程白做。
+// 进行中的题目/答案/批改结果持久化到 localStorage，刷新或误切 tab 可续做。
 // ============================================================
+const DIAGNOSTIC_TOTAL = 5;
+
+function saveDiagnostic() {
+  if (!isTestMode) return;
+  try {
+    localStorage.setItem(DIAGNOSTIC_KEY, JSON.stringify({
+      testIndex, testQuestions, testAnswers, testResults
+    }));
+  } catch(e) { console.warn('摸底进度保存失败', e); }
+}
+function clearDiagnostic() {
+  isTestMode = false; testIndex = 0; testAnswers = []; testQuestions = []; testResults = [];
+  try { localStorage.removeItem(DIAGNOSTIC_KEY); } catch {}
+}
+function loadDiagnostic() {
+  try {
+    const raw = localStorage.getItem(DIAGNOSTIC_KEY);
+    if (!raw) return false;
+    const s = JSON.parse(raw);
+    if (!s || !Array.isArray(s.testQuestions) || !s.testQuestions.length) return false;
+    testIndex = s.testIndex || 0;
+    testQuestions = s.testQuestions;
+    testAnswers = Array.isArray(s.testAnswers) ? s.testAnswers : [];
+    testResults = Array.isArray(s.testResults) ? s.testResults : [];
+    isTestMode = true;
+    return true;
+  } catch { return false; }
+}
+
 async function startLevelTest() {
   if (!getApiConfig()) {
     showToast('需先配置 API');
     openDrawer();
     return;
   }
+  // 已有进行中的摸底，直接续做
+  if (loadDiagnostic()) {
+    enterTestCard();
+    await showCurrentTest();
+    return;
+  }
+  isTestMode = true; testIndex = 0; testAnswers = []; testQuestions = []; testResults = [];
+  enterTestCard();
+  const ok = await nextTestQuestion();
+  if (!ok) cancelLevelTest(true);
+}
+
+function enterTestCard() {
   switchTab('practice');
-  isTestMode = true; testIndex = 0; testAnswers = []; testQuestions = [];
   renderPracticeTip();
   $('#compareMode').classList.add('hidden');
   $('#practiceMode').classList.remove('hidden');
   $('#testCard').classList.remove('hidden');
   $('#desk').classList.add('hidden');
-  showTestProgress();
-  const ok = await nextTestQuestion();
-  if (!ok) cancelLevelTest(true);
 }
 
 function cancelLevelTest(silent) {
-  isTestMode = false;
+  clearDiagnostic();
   $('#testCard').classList.add('hidden');
+  $('#testVerdict').innerHTML = '';
   $('#desk').classList.remove('hidden');
   renderPracticeTip();
   if (!silent) showToast('摸底已止');
@@ -5032,6 +5197,7 @@ function normalizeTestQuestion(q) {
     return [];
   };
   return {
+    id: 'dq_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
     domain: pickStr('domain', 'topic', 'subject', 'area', 'category') || '通用',
     level: pickStr('level', 'difficulty') || 'L2',
     context: pickStr('context', 'background', 'scenario', 'description') || '（未提供背景）',
@@ -5042,11 +5208,18 @@ function normalizeTestQuestion(q) {
 }
 
 async function nextTestQuestion() {
-  if (testIndex >= 5) { await finishLevelTest(); return true; }
+  if (testIndex >= DIAGNOSTIC_TOTAL) { finishLevelTest(); return true; }
   showTestProgress();
+  // 若本题已有批改结果（续做场景），直接回放反馈
+  if (testResults[testIndex]) { showTestVerdict(testQuestions[testIndex], testAnswers[testIndex], testResults[testIndex]); return true; }
+
+  $('#testVerdict').innerHTML = '';
+  $('#testManuscript').classList.remove('hidden');
+  $('#btnTestSubmit').classList.remove('hidden');
   $('#btnTestSubmit').disabled = true;
   $('#btnTestSubmit').textContent = 'AI 出题中…';
   $('#testInput').disabled = true;
+  $('#testInput').value = '';
   $('#testContext').textContent = '';
   $('#testOral').innerHTML = '<span class="skel" style="width:92%"></span><span class="skel" style="width:80%"></span><span class="skel" style="width:64%"></span>';
   const isFirst = testIndex === 0;
@@ -5092,114 +5265,252 @@ keyPoints：["『搞过一阵子』→『开展专项探索』","『轰轰烈烈
     }
     if (!norm) throw new Error('AI 出题质量连续 3 次未达标：' + lastErr);
     testQuestions.push(norm);
-    $('#testContext').textContent = norm.context || '';
-    $('#testOral').textContent = norm.oral || '';
-    $('#testInput').value = '';
-    $('#testInput').disabled = false;
-    $('#btnTestSubmit').disabled = false;
-    $('#btnTestSubmit').textContent = '提交';
-    $('#testInput').focus();
+    saveDiagnostic();
+    renderTestQuestion(norm, '');
     return true;
   } catch(e) {
-    showToast('AI 出题失败：' + e.message, 5000);
+    showTestError(e, () => nextTestQuestion());
     console.error('nextTestQuestion error:', e);
-    $('#testInput').disabled = false;
-    $('#btnTestSubmit').disabled = false;
-    $('#btnTestSubmit').textContent = '提交';
     return false;
   } finally {
     _questionGenerating = false;
   }
 }
 
+function renderTestQuestion(q, ans) {
+  showTestProgress();
+  $('#testContext').textContent = q.context || '';
+  $('#testOral').textContent = q.oral || '';
+  $('#testVerdict').innerHTML = '';
+  $('#testManuscript').classList.remove('hidden');
+  $('#testInput').value = ans || '';
+  $('#testInput').disabled = false;
+  $('#btnTestSubmit').classList.remove('hidden');
+  $('#btnTestSubmit').disabled = false;
+  $('#btnTestSubmit').textContent = '提交';
+  $('#testInput').focus();
+}
+
+function showTestError(errOrMsg, retryFn) {
+  const fe = (errOrMsg instanceof Error) ? friendlyAIError(errOrMsg) : { headline: String(errOrMsg), code: '', detail: '' };
+  const canSettings = ['auth','forbidden','notfound','badrequest'].includes(fe.code);
+  $('#btnTestSubmit').classList.add('hidden');
+  $('#testVerdict').innerHTML = `<div class="verdict" style="border:1px solid var(--zhu-line);padding:14px;border-radius:8px">
+    <div style="color:var(--zhu);font-weight:700;margin-bottom:6px">出题未成功</div>
+    <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:12px">${esc(fe.headline)}</div>
+    ${fe.detail ? `<details style="margin-bottom:10px"><summary style="cursor:pointer;font-size:12px;color:var(--muted)">技术详情</summary><p style="font-size:12px;color:var(--muted);word-break:break-all;white-space:pre-wrap;margin-top:4px">${esc(fe.detail)}</p></details>` : ''}
+    <button class="btn btn-ink" id="btnTestRetry" type="button">重试出题</button>
+    ${canSettings ? ' <button class="btn btn-line" id="btnTestRetrySettings" type="button">去设置检查</button>' : ''}
+  </div>`;
+  const r = $('#btnTestRetry'); if (r) r.onclick = retryFn;
+  const s = $('#btnTestRetrySettings'); if (s) s.onclick = () => openDrawer();
+}
+
 function showTestProgress() {
   let html = '';
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < DIAGNOSTIC_TOTAL; i++) {
     html += `<div class="test-dot${i < testIndex ? ' done' : ''}${i === testIndex ? ' current' : ''}"></div>`;
   }
-  html += `<span class="test-badge">${Math.min(testIndex + 1, 5)} / 5</span>`;
+  html += `<span class="test-badge">${Math.min(testIndex + 1, DIAGNOSTIC_TOTAL)} / ${DIAGNOSTIC_TOTAL}</span>`;
   $('#testProgress').innerHTML = html;
   const noEl = $('#testNo');
-  if (noEl) noEl.textContent = Math.min(testIndex + 1, 5);
+  if (noEl) noEl.textContent = Math.min(testIndex + 1, DIAGNOSTIC_TOTAL);
+}
+
+// 回放当前题：已答已批改则直接显示批改；已答未批改则恢复答案待提交
+async function showCurrentTest() {
+  const q = testQuestions[testIndex];
+  if (!q) { await nextTestQuestion(); return; }
+  showTestProgress();
+  $('#testContext').textContent = q.context || '';
+  $('#testOral').textContent = q.oral || '';
+  if (testResults[testIndex]) {
+    showTestVerdict(q, testAnswers[testIndex], testResults[testIndex]);
+  } else {
+    renderTestQuestion(q, testAnswers[testIndex] || '');
+  }
 }
 
 async function submitTestAnswer() {
   const ans = $('#testInput').value.trim();
   if (!ans) { showToast('请先写下改写内容'); return; }
+  const q = testQuestions[testIndex];
+  if (!q) return;
+  testAnswers[testIndex] = ans;
+  saveDiagnostic();
+
   $('#btnTestSubmit').disabled = true;
-  $('#btnTestSubmit').textContent = '提交中…';
-  testAnswers.push(ans);
-  testIndex++;
-  const ok = await nextTestQuestion();
-  if (!ok) {
-    // 下一题出题失败：回滚进度，恢复本题与已写答案，允许重新提交
-    testAnswers.pop();
-    testIndex--;
-    const q = testQuestions[testIndex];
-    if (q) {
-      showTestProgress();
-      $('#testContext').textContent = q.context || '';
-      $('#testOral').textContent = q.oral || '';
-      $('#testInput').value = ans;
-      $('#testInput').disabled = false;
-      $('#btnTestSubmit').disabled = false;
-      $('#btnTestSubmit').textContent = '提交';
-    }
+  $('#btnTestSubmit').textContent = 'AI 批改中…';
+  $('#testInput').disabled = true;
+  $('#testVerdict').innerHTML = '<div class="verdict"><span class="skel" style="width:40%"></span><span class="skel" style="width:96%"></span><span class="skel" style="width:70%"></span><div id="testGradingProgress" style="text-align:center;padding:12px 0;font-size:13px;color:var(--muted);min-height:2em;">AI 正在批改…</div></div>';
+  const _cancelWait = stagedWaitText($('#testGradingProgress'), [
+    [8000, '还在思考，请稍候…'],
+    [20000, '模型响应较慢，再等一下…']
+  ]);
+
+  try {
+    const result = await gradeRewrite(q, ans);
+    _cancelWait();
+    testResults[testIndex] = result;
+    // 每题立即入库，刷新不丢；source 标记为摸底题
+    const rec = {
+      id: Date.now() + Math.random(),
+      date: new Date().toISOString(),
+      mode: 'online', trainingType: 'rewrite', source: 'diagnostic',
+      question: q, userAnswer: ans,
+      score: clampScore(result.score), aiScore: slimAiResult(result),
+      selfRating: null, oralWords: countOralWords(ans)
+    };
+    pushHistory(rec);
+    flushPersist();
+    saveDiagnostic();
+    showTestVerdict(q, ans, result);
+  } catch(e) {
+    _cancelWait();
+    console.error('submitTestAnswer grading error:', e);
+    const fe = friendlyAIError(e);
+    const canSettings = ['auth','forbidden','notfound','badrequest'].includes(fe.code);
+    $('#testManuscript').classList.remove('hidden');
+    $('#testInput').disabled = false;
+    $('#btnTestSubmit').classList.add('hidden');
+    $('#testVerdict').innerHTML = `<div class="verdict" style="border:1px solid var(--zhu-line);padding:14px;border-radius:8px">
+      <div style="color:var(--zhu);font-weight:700;margin-bottom:6px">批改失败，答案已保留</div>
+      <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:12px">${esc(fe.headline)}</div>
+      ${fe.detail ? `<details style="margin-bottom:10px"><summary style="cursor:pointer;font-size:12px;color:var(--muted)">技术详情</summary><p style="font-size:12px;color:var(--muted);word-break:break-all;white-space:pre-wrap;margin-top:4px">${esc(fe.detail)}</p></details>` : ''}
+      <button class="btn btn-ink" id="btnTestGradeRetry" type="button">重新批改</button>
+      ${canSettings ? ' <button class="btn btn-line" id="btnTestGradeSettings" type="button">去设置检查</button>' : ''}
+    </div>`;
+    const r = $('#btnTestGradeRetry'); if (r) r.onclick = () => submitTestAnswer();
+    const s = $('#btnTestGradeSettings'); if (s) s.onclick = () => openDrawer();
   }
 }
 
-async function finishLevelTest() {
+// 摸底题卡内的紧凑反馈，使用与练习页一致的 verdict 视觉语言
+function showTestVerdict(q, userAnswer, result) {
+  const modelName = loadApiSettings().model || 'AI';
+  const corrections = result.corrections || [];
+  let annotatedText = esc(userAnswer);
+  const annoCards = [];
+  corrections.forEach((c, i) => {
+    const frag = esc(c.original || '');
+    if (!frag) return;
+    const mark = `<span class="corr-mark" data-anno="t-anno-${i}">${frag}</span>`;
+    if (annotatedText.includes(frag)) annotatedText = annotatedText.replace(frag, mark);
+    annoCards.push(`<div class="anno-card" id="t-anno-${i}"><span class="anno-sugg">${esc(c.suggestion || '')}</span><br><span class="anno-reason">${esc(c.reason || '')}</span></div>`);
+  });
+  const scoreVal = clampScore(result.score);
+  const isLast = testIndex >= DIAGNOSTIC_TOTAL - 1;
+  $('#testManuscript').classList.add('hidden');
+  $('#btnTestSubmit').classList.add('hidden');
+  $('#testVerdict').innerHTML = `
+    <div class="verdict">
+      <div class="verdict-head">
+        <div class="verdict-eyebrow">摸底第 ${testIndex + 1} 题 · AI 批改 · ${esc(modelName)}</div>
+        <div class="score-head">
+          <div class="score-circle"><svg class="score-ring" viewBox="0 0 92 70" aria-hidden="true"><path d="M10 40 C5 22 28 7 48 8 C72 9 89 24 85 41 C81 58 57 66 39 63 C19 60 3 56 10 40 Z"/></svg><span class="score-num"><span class="score-value" data-score="${scoreVal}">0</span><span class="score-max">/ 10</span></span></div>
+          <div class="score-text">
+            <div class="verdict-title" style="font-size:17px">${esc(result.overallComment || '批改完成')}</div>
+            <div class="band-tag">${scoreBand(scoreVal).label}档 · ${scoreBand(scoreVal).desc}</div>
+          </div>
+        </div>
+      </div>
+      <div class="inline-answer">${annotatedText}</div>
+      ${annoCards.join('')}
+      ${result.demoRewrite ? `<div style="font-size:12.5px;color:var(--muted);margin:2px 0 6px">示范改写 · 在你的句子上最小改动</div><div class="ref-body show" style="margin:0 0 8px">${esc(result.demoRewrite)}</div>` : ''}
+      <div class="ref-collapse" id="testRefToggle">参考答案 ▾</div>
+      <div class="ref-body" id="testRefBody">${esc(q.ref || '')}</div>
+      ${result.nextFocus ? `<div class="next-focus-tip">${esc(result.nextFocus)}</div>` : ''}
+      <div class="action-row">
+        <button class="btn btn-text" id="btnTestCancel2" type="button">放弃摸底</button>
+        <button class="btn btn-ink" id="btnTestNext" type="button">${isLast ? '查看画像 →' : '下一题 →'}</button>
+      </div>
+    </div>`;
+  const refT = $('#testRefToggle');
+  if (refT) refT.onclick = () => { const b = $('#testRefBody'); b.classList.toggle('show'); refT.textContent = b.classList.contains('show') ? '参考答案 ▴' : '参考答案 ▾'; };
+  const nx = $('#btnTestNext'); if (nx) nx.onclick = advanceTest;
+  const cx = $('#btnTestCancel2'); if (cx) cx.onclick = () => cancelLevelTest(false);
+  staggerMarks($('#testVerdict'));
+  setTimeout(() => {
+    const scoreEl = $('#testVerdict .score-value');
+    animateScore(scoreEl, scoreEl?.dataset.score);
+    if (nx) nx.focus({ preventScroll: true });
+  }, 50);
+}
+
+async function advanceTest() {
+  testIndex++;
+  saveDiagnostic();
+  if (testIndex >= DIAGNOSTIC_TOTAL) { finishLevelTest(); return; }
+  await nextTestQuestion();
+}
+
+// 由 5 次批改结果本地聚合画像，不再调用 AI 总评
+function buildProfileFromDiagnostic() {
+  const scores = testResults.map(r => clampScore(r.score)).filter(Number.isFinite);
+  const avgScore = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+  const dims = {};
+  PROFILE_DIMS.forEach(k => {
+    const vals = testResults.map(r => dimScoreOf(r.dimensions?.[k]?.score ?? r.dimensions?.[k])).filter(Number.isFinite);
+    let comment = '';
+    for (let i = testResults.length - 1; i >= 0 && !comment; i--) {
+      const d = testResults[i].dimensions?.[k];
+      comment = d && typeof d === 'object' ? d.comment : '';
+    }
+    dims[k] = { score: vals.length ? Math.max(0, Math.min(10, Math.round(vals.reduce((a, b) => a + b, 0) / vals.length))) : 0, comment };
+  });
+  const level = avgScore >= 8 ? 'L3' : avgScore >= 5 ? 'L2' : 'L1';
+  const weakDomains = PROFILE_DIMS.filter(k => dims[k].score > 0 && dims[k].score < 7).sort((a, b) => dims[a].score - dims[b].score).slice(0, 2);
+  // 从最低分题的 nextFocus 取一条主攻方向
+  let worst = -1, worstScore = Infinity;
+  testResults.forEach((r, i) => { const s = clampScore(r.score); if (s < worstScore) { worstScore = s; worst = i; } });
+  const suggestedFocus = worst >= 0 ? (testResults[worst].nextFocus || '') : '';
+  const recentScores = testResults.map((r, i) => ({
+    hid: D.history[D.history.length - DIAGNOSTIC_TOTAL + i]?.id,
+    score: clampScore(r.score), dims: normalizeDims(r.dimensions)
+  }));
+  D.profile = {
+    overallLevel: level, dimensions: dims, avgScore: Math.round(avgScore),
+    weakDomains, oralWordHabits: [], suggestedFocus,
+    generatedAt: new Date().toISOString(), profileVersion: 1,
+    recentScores, diagnostic: true
+  };
+}
+
+function finishLevelTest() {
   isTestMode = false;
-  $('#testCard').classList.add('hidden');
-  $('#desk').classList.remove('hidden');
-
-  const history = testQuestions.map((q,i) => `第${i+1}题: 领域=${q.domain} 难度=${q.level}\n原句: ${q.oral}\n学习者: ${testAnswers[i]}\n参考: ${q.ref}`).join('\n\n');
-
+  try { localStorage.removeItem(DIAGNOSTIC_KEY); } catch {}
+  if (testResults.filter(Boolean).length < DIAGNOSTIC_TOTAL) {
+    // 数据不完整（理论上不可达），留在题卡提示重试
+    showTestError('摸底数据不完整，请重试', () => finishLevelTest());
+    return;
+  }
   try {
-    const prompt = `你是规范表达评估专家。根据以下5道测试题和学习者回答综合分析。\n${history}\n\n返回如下 JSON 格式（所有 score 必须为 0-10 的整数）:\n{"overallLevel":"L1或L2或L3","dimensions":{"信息要点":{"score":8,"comment":"评语"},"概括提炼":{"score":7,"comment":"评语"},"表达规范":{"score":6,"comment":"评语"},"逻辑结构":{"score":5,"comment":"评语"}},"weakDomains":["薄弱领域1"],"oralWordHabits":["高频口语词1"],"suggestedDifficulty":"L2","suggestedFocus":"建议重点"}`;
-    const resp = await callAI([{role:'system',content:AI_SYSTEM_BASE+' 所有 string 字段值（含 dimensions[*].comment、suggestedFocus、weakDomains、oralWordHabits 等）必须用简体中文，不要混入英文或拼音术语。'},{role:'user',content:prompt}]);
-    D.profile = parseJSON(resp);
-    D.profile.generatedAt = new Date().toISOString();
-    D.profile.profileVersion = 1;
-    D.profile.recentScores = []; // 摸底作为初始 dimensions，后续批改走滑动窗口
+    buildProfileFromDiagnostic();
+    testIndex = 0; testAnswers = []; testQuestions = []; testResults = [];
     markDirty();
     showToast('摸底完成，画像已生成');
     renderPracticeTip();
     switchTab('archive');
   } catch(e) {
     console.error('finishLevelTest error:', e);
-    // 评估失败给重试入口：直接用内存中的题目与答案重评，不必整套重测
-    const tip = $('#practiceTip');
-    if (tip && testQuestions.length) {
-      tip.innerHTML = '<span class="tip-msg"><b>摸底评估未完成</b>' + esc('评估失败：' + e.message) + '</span><button class="btn btn-line" id="tipRetryEval" type="button">重试评估</button><button class="tip-close" id="tipClose" type="button" aria-label="关闭提示">×</button>';
-      tip.classList.remove('hidden');
-    }
-    showToast('评估失败：' + e.message);
+    showToast('画像生成失败：' + e.message);
   }
 }
 
 // ============================================================
 // AI 批改
 // ============================================================
-async function aiSubmitAnswer(userAnswer) {
-  if (!currentQ) return;
-  const requestId = ++_answerRequestId;
-  const requestQ = currentQ;
-  const isCurrent = () => requestId === _answerRequestId && getTrainingMode() === 'rewrite' && currentQ === requestQ;
-  try {
-    $('#btnRewriteSubmit').disabled = true; $('#btnRewriteSubmit').textContent = 'AI 批改中…';
-    // 对照区先出骨架，避免白屏等待
-    $('#compareMode').innerHTML = '<div class="verdict"><span class="skel" style="width:40%"></span><span class="skel" style="width:96%"></span><span class="skel" style="width:88%"></span><span class="skel" style="width:70%"></span></div>';
-
-    const profileCtx = D.profile ? `\n学习者画像：水平${D.profile.overallLevel}，弱项${(D.profile.weakDomains||[]).join('、')}（仅供调整建议侧重点，不影响评分）。` : '';
-    const kpCtx = (currentQ.keyPoints||[]).length ? `\n本题考核点（逐条核对学习者是否掌握）：\n${currentQ.keyPoints.map(k => '- ' + k).join('\n')}` : '';
-    const prompt = `你是规范表达教练，批改以下"口语转规范表达"改写练习。${profileCtx}
+// 规范改写题的 AI 批改：练习页与摸底测试共用同一套评分 rubric
+async function gradeRewrite(q, userAnswer, options = {}) {
+  const profileCtx = options.useProfile && D.profile ? `\n学习者画像：水平${D.profile.overallLevel}，弱项${(D.profile.weakDomains||[]).join('、')}（仅供调整建议侧重点，不影响评分）。` : '';
+  const kpCtx = (q.keyPoints||[]).length ? `\n本题考核点（逐条核对学习者是否掌握）：\n${q.keyPoints.map(k => '- ' + k).join('\n')}` : '';
+  const prompt = `你是规范表达教练，批改以下"口语转规范表达"改写练习。${profileCtx}
 
 【题目】
-场景：${currentQ.context||''}　领域：${currentQ.domain}　难度：${currentQ.level}
-原句：${currentQ.oral}
+场景：${q.context||''}　领域：${q.domain}　难度：${q.level}
+原句：${q.oral}
 学习者改写：${userAnswer}
-参考答案：${currentQ.ref}${kpCtx}
+参考答案：${q.ref}${kpCtx}
 
 【批改要求】
 1. 先逐条核对考核点、找出具体问题，最后才打分，不要在分析之前定分。
@@ -5212,8 +5523,26 @@ score：总评分，0-10 的整数。score 必须等于四个维度分的算术�
 
 【返回严格 JSON，字段顺序即分析顺序】
 {"corrections":[{"original":"学习者答案逐字片段","suggestion":"建议改法","reason":"具体原因"}],"dimensions":{"信息要点":{"score":7,"comment":"评语"},"概括提炼":{"score":7,"comment":"评语"},"表达规范":{"score":7,"comment":"评语"},"逻辑结构":{"score":7,"comment":"评语"}},"overallComment":"点名最主要问题的一两句话","demoRewrite":"基于学习者答案的最小改动规范版","nextFocus":"从本题错误归纳的可迁移技巧","reasoning":"先简述评分依据再给出分数","score":7}`;
-    const resp = await callAI([{role:'system',content:AI_SYSTEM_BASE+' 所有 string 字段值必须用简体中文，不要混入英文或拼音术语。corrections[*].original 必须是学习者答案中逐字摘录的片段。nextFocus 必须从本题学习者的实际错误出发归纳成可迁移的通用技巧，先点明本题错在哪、再给通用做法；禁止脱离本题错误的空泛建议。'},{role:'user',content:prompt}], true, {task:'grading'});
-    const result = parseJSON(resp);
+  const resp = await callAI([{role:'system',content:AI_SYSTEM_BASE+' 所有 string 字段值必须用简体中文，不要混入英文或拼音术语。corrections[*].original 必须是学习者答案中逐字摘录的片段。nextFocus 必须从本题学习者的实际错误出发归纳成可迁移的通用技巧，先点明本题错在哪、再给通用做法；禁止脱离本题错误的空泛建议。'},{role:'user',content:prompt}], true, {task:'grading'});
+  return parseJSON(resp);
+}
+
+async function aiSubmitAnswer(userAnswer) {
+  if (!currentQ) return;
+  const requestId = ++_answerRequestId;
+  const requestQ = currentQ;
+  const isCurrent = () => requestId === _answerRequestId && getTrainingMode() === 'rewrite' && currentQ === requestQ;
+  try {
+    $('#btnRewriteSubmit').disabled = true; $('#btnRewriteSubmit').textContent = 'AI 批改中…';
+    // 原位出骨架，避免白屏等待
+    $('#rewriteVerdict').innerHTML = '<div class="verdict"><span class="skel" style="width:40%"></span><span class="skel" style="width:96%"></span><span class="skel" style="width:88%"></span><span class="skel" style="width:70%"></span><div id="gradingProgress" style="text-align:center;padding:12px 0;font-size:13px;color:var(--muted);min-height:2em;">AI 正在批改你的改写…</div></div>';
+    const _cancelWait = stagedWaitText($('#gradingProgress'), [
+      [8000, '还在思考，请稍候…'],
+      [20000, '模型响应较慢，再等一下…']
+    ]);
+
+    const result = await gradeRewrite(currentQ, userAnswer, { useProfile: true });
+    _cancelWait();
     if (!isCurrent()) return;
 
     showOnlineCompare(requestQ, userAnswer, result);
@@ -5228,11 +5557,19 @@ score：总评分，0-10 的整数。score 必须等于四个维度分的算术�
     flushPersist();
   } catch(e) {
     if (!isCurrent()) return;
-    $('#practiceMode').classList.remove('reviewing');
-    $('#btnRewriteSubmit').disabled = false; $('#btnRewriteSubmit').textContent = '提交';
-    showToast('AI 批改失败，答案已保留，请重试');
+    const fe = friendlyAIError(e);
+    const canSettings = ['auth','forbidden','notfound','badrequest'].includes(fe.code);
+    $('#rewriteVerdict').innerHTML = `<div class="verdict" style="border:1px solid var(--zhu-line);padding:14px;border-radius:8px">
+      <div style="color:var(--zhu);font-weight:700;margin-bottom:6px">批改失败，答案已保留</div>
+      <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:12px">${esc(fe.headline)}</div>
+      <button class="btn btn-ink" id="btnRewriteGradeRetry" type="button">重新批改</button>
+      ${canSettings ? ' <button class="btn btn-line" id="btnRewriteGradeSettings" type="button">去设置检查</button>' : ''}
+    </div>`;
+    const r = $('#btnRewriteGradeRetry');
+    if (r) r.onclick = () => aiSubmitAnswer($('#rewriteAnswerInput').value);
+    const s = $('#btnRewriteGradeSettings'); if (s) s.onclick = () => openDrawer();
+    $('#btnRewriteSubmit').classList.add('hidden');
     console.error('aiSubmitAnswer error:', e);
-    // AI-only 模式不生成离线替代结果，保留用户答案等待重试。
   } finally {
     if (requestId === _answerRequestId) {
       $('#btnRewriteSubmit').disabled = false; $('#btnRewriteSubmit').textContent = '提交';
@@ -5417,6 +5754,7 @@ function animateScore(el, target) {
 }
 
 function showOnlineCompare(q, userAnswer, result) {
+  // 规范改写：在答题卡内原位展开批改（不切到 compareMode），视线不跳
   const modelName = loadApiSettings().model || 'AI';
   // ── 内联批注：在用户答案中标记 corrections 片段 ──
   const corrections = result.corrections || [];
@@ -5451,7 +5789,11 @@ function showOnlineCompare(q, userAnswer, result) {
 
   const scoreVal = clampScore(result.score);
 
-  $('#compareMode').innerHTML = `
+  // 原答题卡进入“已批改”态：输入框只读、提交按钮隐裁，原位长出 verdict
+  $('#rewriteAnswerInput').disabled = true;
+  $('#btnRewriteSubmit').classList.add('hidden');
+
+  $('#rewriteVerdict').innerHTML = `
     <div class="verdict">
       <div class="verdict-head">
         <div class="verdict-eyebrow">AI 批改 · ${esc(modelName)}</div>
@@ -5476,10 +5818,12 @@ function showOnlineCompare(q, userAnswer, result) {
       </div>
     </div>
   `;
-  staggerMarks($('#compareMode'));
+  const refT = $('#refToggle');
+  if (refT) refT.onclick = () => { const b = $('#refBody'); b.classList.toggle('show'); refT.textContent = b.classList.contains('show') ? '参考答案 ▴' : '参考答案 ▾'; };
+  staggerMarks($('#rewriteVerdict'));
   _pendingRetryAnswer = userAnswer;
   setTimeout(() => {
-    const scoreEl = $('#compareMode .score-value');
+    const scoreEl = $('#rewriteVerdict .score-value');
     animateScore(scoreEl, scoreEl?.dataset.score);
     $('#btnNextPractice').focus({ preventScroll: true });
   }, 50);
@@ -5909,13 +6253,21 @@ function renderHistory() {
       scoreTxt = '-';
     }
     const kp = h.question?.keyPoints || h.aiScore?.corrections?.map(c => `${c.original} → ${c.suggestion}`) || [];
+    // 来源标签：摸底题 / 错题本 / 普通练习
+    let srcTag = '';
+    if (h.source === 'diagnostic') srcTag = '<span class="hist-src src-diag">摸底</span>';
+    // 低分题露出一句 AI 总评，不用点开就知道问题
+    const aiOverall = h.aiScore?.overall || '';
+    const lowHint = (h.score != null && h.score <= 6 && aiOverall) ? `<span class="hist-hint">${esc(String(aiOverall).slice(0, 46))}${String(aiOverall).length > 46 ? '…' : ''}</span>` : '';
     return `<li class="history-item" data-id="${escAttr(h.id)}">
       <div class="hist-row">
         <span class="hist-date">${dateStr}</span>
         <span class="hist-kind">${h.trainingType === 'summary' ? '概括训练' : '规范改写'}</span>
+        ${srcTag}
         <span class="hist-domain">${esc(h.question?.domain || h.question?.type || '?')}</span>
         <span class="hist-text">${esc((h.question?.oral || h.question?.material || '').slice(0,30))}…</span>
         <span class="hist-actions">
+          ${lowHint}
           <span class="hist-score">${scoreTxt}</span>
           <button class="hist-delete" type="button" data-delete-id="${escAttr(h.id)}" data-delete-kind="practice" title="删除这条练习记录">删除</button>
         </span>
@@ -6005,9 +6357,19 @@ function renderModeInfo() {
   renderPracticeMeta();
 }
 
+function renderDiagnosticCta() {
+  const cta = $('#diagCta');
+  if (!cta) return;
+  const cfg = getApiConfig();
+  // 仅在练习面板、非摸底中、无画像且 API 已配置时展示
+  if (isTestMode || D.profile || !cfg || currentTab !== 'practice') { cta.classList.add('hidden'); return; }
+  cta.classList.remove('hidden');
+}
+
 function renderPracticeTip() {
   const tip = $('#practiceTip');
   if (!tip) return;
+  renderDiagnosticCta();
   if (isTestMode) { tip.classList.add('hidden'); return; }
   if (getTrainingMode() === 'summary') {
     const cfg = getApiConfig();
@@ -6027,12 +6389,13 @@ function renderPracticeTip() {
   }
   if (!D.profile) {
     const cfg = getApiConfig();
-    if (cfg) {
-      tip.innerHTML = '<span class="tip-msg"><b>画像将随 AI 批改自动积累</b>直接做题即可；也可做 5 题摸底快速建立初始画像，让出题更早贴合弱项。</span><button class="btn btn-line" id="tipStartTest" type="button">开始摸底</button><button class="tip-close" id="tipClose" type="button" aria-label="关闭提示">×</button>';
-    } else {
+    if (!cfg) {
       tip.innerHTML = '<span class="tip-msg"><b>AI 陪练尚未就绪</b>规范改写和概括训练都需要 AI 题目与批改，请先在「设置」配置 API Key。</span><button class="tip-close" id="tipClose" type="button" aria-label="关闭提示">×</button>';
+      tip.classList.remove('hidden');
+    } else {
+      // 有 API 时用上方的摸底引导卡，不再重复提示
+      tip.classList.add('hidden');
     }
-    tip.classList.remove('hidden');
   } else {
     tip.classList.add('hidden');
   }
@@ -6040,8 +6403,7 @@ function renderPracticeTip() {
 
 document.addEventListener('click', e => {
   if (!e.target) return;
-  if (e.target.id === 'tipStartTest' || e.target.id === 'btnStartTest' || e.target.id === 'btnRetest') startLevelTest();
-  if (e.target.id === 'tipRetryEval') finishLevelTest();
+  if (e.target.id === 'tipStartTest' || e.target.id === 'btnStartTest' || e.target.id === 'btnRetest' || e.target.id === 'btnDiagStart') startLevelTest();
   if (e.target.id === 'tipClose' || (e.target.closest && e.target.closest('#tipClose'))) {
     const tip = $('#practiceTip'); if (tip) tip.classList.add('hidden');
   }
@@ -6544,22 +6906,49 @@ function initApp() {
   updateNavInk();
   window.addEventListener('resize', updateNavInk, {passive:true});
 
-  // Welcome
+  // Welcome：按 API / 材料状态动态渲染起步选项，避免用户点了概括却发现没材料
   initIntro();
-  $('#welcomeOffline').addEventListener('click', () => {
-    D.settings.mode = 'online'; D.settings.trainingMode = 'rewrite'; D.hasSeenWelcome = true; markDirty();
+  const overlay = $('#welcomeOverlay');
+  const welcomeOpts = $('#welcomeOpts');
+  function renderWelcomeOpts() {
+    if (!welcomeOpts) return;
+    const cfg = getApiConfig();
+    const hasMaterials = loadUserMaterials().some(m => m.status === 'ready' && m.provenance?.userConfirmed);
+    const opts = [];
+    if (!cfg) {
+      opts.push({ id: 'welcomeSetup', cls: 'welcome-opt', tag: '01 · 第一步', title: '配置 AI 接口', desc: '填好 API Key 后才能出题和批改，所有数据只存在你自己的浏览器里。', primary: true });
+    } else {
+      opts.push({ id: 'welcomeDiag', cls: 'welcome-opt', tag: '01 · 推荐', title: '做 5 题摸底', desc: 'AI 逐题批改，结束后给你一份四维能力画像，之后出题更贴合弱项。', primary: true });
+      opts.push({ id: 'welcomeRewrite', cls: 'welcome-opt', tag: hasMaterials ? '02 ·' : '02 · 即开即练', title: 'AI 规范改写', desc: '无需材料，AI 现场出题，提交后逐句批改并给出具体修改建议。' });
+      if (hasMaterials) {
+        opts.push({ id: 'welcomeSummary', cls: 'welcome-opt', tag: '03 ·', title: 'AI 概括训练', desc: '用你导入的材料，练习找点、归类、命名和成句。' });
+      } else {
+        opts.push({ id: 'welcomeMaterials', cls: 'welcome-opt', tag: '03 ·', title: '导入材料练概括', desc: '提供你有权使用的材料，AI 生成题、切片和采分点后练习。' });
+      }
+    }
+    welcomeOpts.innerHTML = opts.map((o, i) => `<button class="${o.cls}" id="${o.id}"><h4><span>${o.tag}</span> ${o.title}</h4><p>${o.desc}</p></button>`).join('');
+    welcomeOpts.querySelectorAll('.welcome-opt').forEach((el, i) => {
+      el.style.animation = `riseIn .5s var(--ease-out) ${.25 + i*.12}s both`;
+    });
+    const pick = id => welcomeOpts.querySelector('#' + id);
+    pick('welcomeSetup')?.addEventListener('click', () => { closeWelcomeSeen(); openDrawer(); });
+    pick('welcomeDiag')?.addEventListener('click', () => { closeWelcomeSeen(); switchTab('practice'); startLevelTest(); });
+    pick('welcomeRewrite')?.addEventListener('click', () => startWelcomeMode('rewrite'));
+    pick('welcomeSummary')?.addEventListener('click', () => startWelcomeMode('summary'));
+    pick('welcomeMaterials')?.addEventListener('click', () => { closeWelcomeSeen(); switchTab('materials'); showToast('粘贴或上传材料后，由 AI 生成题目'); });
+  }
+  function closeWelcomeSeen() {
+    D.hasSeenWelcome = true; markDirty();
+    $('#welcomeOverlay').classList.remove('open');
+  }
+  function startWelcomeMode(mode) {
+    D.settings.mode = 'online'; D.settings.trainingMode = mode; D.hasSeenWelcome = true; markDirty();
     $('#welcomeOverlay').classList.remove('open');
     reloadAll();
     switchTab('practice');
-    if (!getApiConfig()) showToast('请先在「设置」中配置 AI 接口');
-  });
-  $('#welcomeOnline').addEventListener('click', () => {
-    D.settings.mode = 'online'; D.settings.trainingMode = 'summary'; D.hasSeenWelcome = true; markDirty();
-    $('#welcomeOverlay').classList.remove('open');
-    reloadAll();
-    switchTab('practice');
-    if (!getApiConfig()) showToast('请先在「设置」中配置 AI 接口');
-  });
+  }
+  renderWelcomeOpts();
+  // 原有的“先随便看看”逻辑保留
   $('#welcomeSkip').addEventListener('click', () => {
     D.hasSeenWelcome = true; markDirty();
     $('#welcomeOverlay').classList.remove('open');
@@ -7050,21 +7439,34 @@ async function umGeneratePractice() {
   btn.disabled = true; btn.textContent = '生成中…';
   const resultBox = $('#umGenerateResult');
   resultBox.classList.add('hidden');
+  // 分阶段提示：长任务预期管理（材料生成通常 20–60 秒）
+  resultBox.classList.remove('hidden');
+  resultBox.innerHTML = `<div style="padding:8px 2px;color:var(--ink-soft);font-size:13.5px;line-height:1.8">
+    <span class="loading-dot" style="display:inline-block;vertical-align:middle;margin-right:8px"></span>
+    <span id="umGenProgress">AI 正在阅读材料、拆切片、提炼采分点…通常需要 20–60 秒</span>
+  </div>`;
+  const _cancelWait = stagedWaitText($('#umGenProgress'), [
+    [15000, '材料较长时模型会慢一些，仍在生成中…'],
+    [40000, '快好了，正在核对切片与参考答案…'],
+    [75000, '仍在等待模型返回，若超时可重试或缩短材料']
+  ]);
   console.warn(`[AI] 材料生成开始 | 材料长度=${text.length}字 | 方向=${dir} | 模型=${cfg.model}`);
   try {
+    const lenHint = text.replace(/\s/g, '').length;
+    const pointHint = lenHint <= 520 ? '3 个左右' : lenHint <= 900 ? '4 个左右' : '5 个以内';
     const systemPrompt = AI_SYSTEM_BASE + `\n\n你现在需要根据用户提供的材料，生成一道${dir === 'summary' ? '概括训练' : '规范改写'}练习题。
 要求：
-1. 只能根据材料内容出题，不得补造事实
+1. 只能根据材料内容出题，不得补造事实；title 用一句话给题目起名（不超过 20 字）
 2. 生成题目要求(prompt)、练习用材料(material)、切片(slices)、采分点(points)、组织链(buildChain)、参考答案(ref)
 3. slices 每个切片包含 text(材料原文片段)、punct(分隔符)、valid(是否有效信息)、point(归属采分点索引)、reason(原因)
-4. points 每个采分点包含 name(上位概括词)、keys(关键词数组)、acceptable(可接受的同义表达数组)
+4. points 每个采分点包含 name(上位概括词)、keys(关键词数组)、acceptable(可接受的同义表达数组)。本材料建议采分点数量：${pointHint}，不要为了显得内容多而硬凑
 5. type: 问题|做法|成效|变化|经验
 6. level: L1|L2|L3。按材料实际密度判断：3个核心点且材料不超过约520字为L1；4个核心点且材料不超过约720字为L2；更高密度才为L3，不要为了显得正式或内容丰富随意上调难度。
 7. slices.valid=true 时 point 必须是从 0 开始的采分点索引，不能使用 1-based 编号；无效切片 point 写 -1。
-7. 参考答案必须使用“总括句 + 编号 + 概括词 + 具体事实”的结构。每个要点都要写清材料中的动作、对象或结果，不能只堆“整合资源、搭建平台、提升水平”等空泛概括词。
-8. 参考答案不要机械套用“主要做法有：一是……二是……三是……”；可以自然表达，但编号和层次必须清楚。避免语病、搭配不当和宣传稿式套话。
-9. 概括词必须能从材料事实中提炼，具体事实优先使用材料原词；不得把材料中没有的目的、效果或因果关系补写进去。
-10. 所有字段必须用简体中文`;
+8. 参考答案必须使用“总括句 + 编号 + 概括词 + 具体事实”的结构。每个要点都要写清材料中的动作、对象或结果，不能只堆“整合资源、搭建平台、提升水平”等空泛概括词。
+9. 参考答案不要机械套用“主要做法有：一是……二是……三是……”；可以自然表达，但编号和层次必须清楚。避免语病、搭配不当和宣传稿式套话。
+10. 概括词必须能从材料事实中提炼，具体事实优先使用材料原词；不得把材料中没有的目的、效果或因果关系补写进去。
+11. 所有字段必须用简体中文`;
     const userMsg = `材料原文：\n${text}\n\n训练方向：${dir === 'summary' ? '概括训练' : '规范改写'}\n\n请返回严格的 JSON 对象。`;
     const result = await callValidatedMaterial(
       [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMsg }],
@@ -7114,10 +7516,21 @@ async function umGeneratePractice() {
     resultBox.classList.remove('hidden');
     showToast('练习已生成，请确认 AI 结果后开始');
   } catch(e) {
+    _cancelWait();
     console.error(`[AI] ✗ 材料生成失败: ${e.message}`);
-    resultBox.innerHTML = `<h4 style="color:var(--zhu)">✘ 生成失败</h4><p>${esc(e.message)}</p>`;
+    const fe = friendlyAIError(e);
+    const canRetry = !['auth','forbidden','badrequest'].includes(fe.code);
+    resultBox.innerHTML = `<h4 style="color:var(--zhu)">✘ 生成失败</h4>
+      <p style="margin:6px 0">${esc(fe.headline)}</p>
+      ${fe.detail ? `<details style="margin:6px 0"><summary style="cursor:pointer;font-size:12px;color:var(--muted)">技术详情</summary><p style="font-size:12px;color:var(--muted);word-break:break-all;white-space:pre-wrap">${esc(fe.detail)}</p></details>` : ''}
+      <div class="um-actions" style="margin-top:10px">
+        ${canRetry ? '<button class="btn btn-ink btn-sm" id="btnUmGenRetry" type="button">重新生成</button>' : '<button class="btn btn-line btn-sm" id="btnUmGenSettings" type="button">去设置检查</button>'}
+      </div>`;
+    const r = $('#btnUmGenRetry'); if (r) r.onclick = () => umGeneratePractice();
+    const s = $('#btnUmGenSettings'); if (s) s.onclick = () => openDrawer();
     resultBox.classList.remove('hidden');
   } finally {
+    _cancelWait();
     btn.disabled = false; btn.textContent = '生成练习';
   }
 }
@@ -7139,7 +7552,8 @@ async function umParseTrueQuestion() {
   const btn = $('#btnUmParse');
   btn.disabled = true; btn.textContent = '解析中…';
   const resultBox = $('#umParseResult');
-  resultBox.classList.add('hidden');
+  resultBox.classList.remove('hidden');
+  resultBox.innerHTML = `<p style="padding:4px 2px;color:var(--ink-soft);font-size:13.5px"><span class="loading-dot" style="display:inline-block;vertical-align:middle;margin-right:8px"></span>AI 正在结构化提取…</p>`;
   try {
     const systemPrompt = AI_SYSTEM_BASE + `\n\n你现在需要对用户提供的真题进行结构化提取。
 要求：
@@ -7208,7 +7622,14 @@ async function umParseTrueQuestion() {
       $('#btnUmSaveTq').disabled = true;
     };
   } catch(e) {
-    resultBox.innerHTML = `<h4 style="color:var(--zhu)">✘ 解析失败</h4><p>${esc(e.message)}</p><p>原始内容已保留在上方输入框中。</p>`;
+    const fe = friendlyAIError(e);
+    const canRetry = !['auth','forbidden','badrequest'].includes(fe.code);
+    resultBox.innerHTML = `<h4 style="color:var(--zhu)">✘ 解析失败</h4>
+      <p style="margin:6px 0">${esc(fe.headline)}</p>
+      <p style="font-size:12px;color:var(--muted)">原始内容已保留在上方输入框中。</p>
+      ${canRetry ? '<div class="um-actions" style="margin-top:8px"><button class="btn btn-ink btn-sm" id="btnUmParseRetry" type="button">重新解析</button></div>' : '<div class="um-actions" style="margin-top:8px"><button class="btn btn-line btn-sm" id="btnUmParseSettings" type="button">去设置检查</button></div>'}`;
+    const r = $('#btnUmParseRetry'); if (r) r.onclick = () => umParseTrueQuestion();
+    const s = $('#btnUmParseSettings'); if (s) s.onclick = () => openDrawer();
     resultBox.classList.remove('hidden');
   } finally {
     btn.disabled = false; btn.textContent = '解析真题';
@@ -7339,6 +7760,11 @@ setTimeout(() => {
     renderPracticeTip();
     if (D.hasSeenWelcome) {
       showPracticeQuestion();
+    }
+    // 进行中的摸底：刷新后自动续做（在初始渲染之后，直接进入题卡）
+    if (loadDiagnostic()) {
+      enterTestCard();
+      showCurrentTest();
     }
     hideBootLoader();
     // 首次用户未配置 API 时自动弹出设置抽屉
